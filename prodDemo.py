@@ -30,14 +30,6 @@ splitter = RecursiveCharacterTextSplitter(chunk_size=2000,
                                           chunk_overlap=100)
 chunks = splitter.split_documents(data)
 
-data = {}
-for doc in chunks:
-    data[str(uuid.uuid1())] = {
-        "source": doc.metadata, 
-        "documents": doc.page_content
-    }
-    break
-
 vectorstore = Chroma.from_documents(chunks, 
                                     embeddings,
                                     collection_name="wm1")
