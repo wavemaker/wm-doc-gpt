@@ -15,7 +15,7 @@ import chromadb
 
 chroma_client = chromadb.Client()
 
-loader = DirectoryLoader('/Users/chiranjeevib_500350/wavemaker/Project/MarketingRag/data/source_data', glob="./*.md", loader_cls=TextLoader)
+loader = DirectoryLoader('../MarketingRag/data/source_data', glob="./*.md", loader_cls=TextLoader)
 data = loader.load()
 
 llm = ChatOpenAI(model_name='gpt-4-turbo-preview', 
@@ -27,12 +27,6 @@ splitter = RecursiveCharacterTextSplitter(chunk_size=2000,
                                           chunk_overlap=100)
 chunks = splitter.split_documents(data)
 
-data = {}
-for doc in chunks:
-    data[str(uuid.uuid1())] = {
-        "source": doc.metadata, 
-        "documents": doc.page_content
-    }
 
 vectorstore = Chroma.from_documents(chunks, 
                                     embeddings,
