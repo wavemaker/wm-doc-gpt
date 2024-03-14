@@ -4,32 +4,30 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
 from qdrant_client import models, QdrantClient
-from src.loader import CustomFileLoader, CustomDirectoryLoader
+from src.helper.loader import CustomFileLoader, CustomDirectoryLoader
 import os
 from dotenv import load_dotenv
+import logging
+from src.helper.model import SentenceTransformerLoader 
 
-from src.config import( 
-                    DATA_LOC,
+from src.config.config import(
                     HOSTNAME,
                     PORT,
                     QUDRANT_URL,
-                    PERSIST_DIRECTORY,
-                    COLLECTION_NAME
+                    PERSIST_DIRECTORY
                 )
 
-load_dotenv()
-openai_key = os.getenv("OPENAI_API_KEY")
+# load_dotenv()
+# openai_key = os.getenv("OPENAI_API_KEY")
 embedding = OpenAIEmbeddings() 
 qdrant = QdrantClient(HOSTNAME, port=PORT)
-
-import logging
-logging.basicConfig(filename='info.log', level=logging.INFO)
-
+encoder = SentenceTransformerLoader.get_model()
 
 class PrepareVectorDB:
     def __init__(self,PATH):
         self.data = None
         self.PATH = PATH
+        self.logger = logging.getLogger(__name__)
         # self.persist_directory = PERSIST_DIRECTORY
 
     def load_data(self):
@@ -48,7 +46,7 @@ class PrepareVectorDB:
                 return self.data
 
             else:
-                loader = CustomDirectoryLoader(self.PATH, glob="./*.md", loader_cls=TextLoader)
+                loader = CustomDirectoryLoader(self.PATH, glob="**/*.md", loader_cls=TextLoader)
                 self.data = loader.load()
                 logging.info("Loading .md documents is done")
                 return self.data
@@ -69,8 +67,8 @@ class PrepareVectorDB:
 
             logging.info("Loading documents for chunking")
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=1000, 
-                                                      chunk_overlap=100)
+            splitter = RecursiveCharacterTextSplitter(chunk_size=8000, 
+                                                      chunk_overlap=50)
             chunks = splitter.split_documents(self.data)
 
             logging.info("Chunking of the Data is Done")
@@ -107,6 +105,45 @@ class PrepareVectorDB:
             logging.error(f"Error preparing and saving vectordb: {e}")
             return None
         
-# db = PrepareVectorDB(DATA_LOC)
-# res = db.prepare_and_save_vectordb()
-# print(res)
+class SemanticSearch:
+    def __init__(self, collection_name):
+        self.collection_name = collection_name
+        self.encoder = encoder
+        self.logger = logging.getLogger(__name__)
+
+    def create_collection(self):
+        try:
+            vectors_config = models.VectorParams(
+                            size=self.encoder.get_sentence_embedding_dimension(),
+                            distance=models.Distance.COSINE
+                            )
+            
+            qdrant.create_collection(
+                            collection_name=self.collection_name,
+                            vectors_config=vectors_config
+                            )
+            self.logger.info(f"Successfully created collection with collection name as:{self.collection_name}.")
+
+        except Exception as e:
+            self.logger.error(f"Error occurred: {e}")
+
+    def upload_to_collection(self, faqdata):
+        try:
+            points = [
+                models.PointStruct(
+                    id=idx,
+                    vector=self.encoder.encode(doc["answer"]).tolist(),
+                    payload=doc
+                ) for idx, doc in enumerate(faqdata)
+            ]
+            qdrant.upload_points(
+                collection_name=self.collection_name,
+                points=points
+            )
+            self.logger.info(f"Successfully uploaded data to collection for {self.collection_name}.")
+        
+        except FileNotFoundError as e:
+            self.logger.error(f"File not found: {e}")
+        
+        except Exception as e:
+            self.logger.error(f"Error occurred: {e}")
