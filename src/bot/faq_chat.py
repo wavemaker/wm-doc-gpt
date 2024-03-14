@@ -8,11 +8,13 @@ from src.config.config import (
                                 HOSTNAME,
                                 PORT,
                                 FAQ_LOC,
-                                FAQ_COLLECTION_NAME
+                                FAQ_COLLECTION_NAME,
+                                QDRANT_API_KEY
                             )
 
 qdrantClient = QdrantClient(HOSTNAME, 
-                            port = PORT)
+                            port = PORT,
+                            api_key=QDRANT_API_KEY)
 
 encoder = SentenceTransformerLoader.get_model()
 

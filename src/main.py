@@ -1,17 +1,18 @@
-from src.helper.prepare_db import PrepareVectorDB
-from src.bot.faq_chat import search
-from src.bot.doc_chat import ChatAssistant
-from flask import Flask, request, jsonify, session
-from src.bot.faq_chat import CollectionUploadChecker
-from langchain_community.chat_message_histories import RedisChatMessageHistory
-import uuid
-from datetime import timedelta
 import os
 import csv
-from urllib.parse import urlparse
-from src.helper.scrapper import Scraper
+import uuid
+from datetime import timedelta
 import logging
 from dotenv import load_dotenv
+from flask import Flask, request, jsonify, session
+from langchain_community.chat_message_histories import RedisChatMessageHistory
+from urllib.parse import urlparse
+from src.helper.scrapper import Scraper
+from src.helper.prepare_db import PrepareVectorDB
+from src.bot.faq_chat import CollectionUploadChecker
+from src.bot.faq_chat import search
+from src.bot.doc_chat import ChatAssistant
+
 from src.config.config import (
         COLLECTION_NAME, 
         DATA_LOC,
@@ -23,8 +24,7 @@ from src.config.config import (
 app = Flask(__name__)
 
 load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-app.secret_key = SECRET_KEY
+app.secret_key = os.getenv("SECRET_KEY")
 app.permanent_session_lifetime = timedelta(hours=1)
 
 @app.route('/answer', methods=['POST'])

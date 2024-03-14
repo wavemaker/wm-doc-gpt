@@ -1,9 +1,7 @@
-import logging
-from langchain.document_loaders import DirectoryLoader
-from langchain_community.document_loaders import TextLoader
-import pandas as pd
 import json
-from src.config.config import DATA_LOC,FAQ_LOC
+import logging
+import pandas as pd
+from langchain.document_loaders import DirectoryLoader
 
 class CustomDirectoryLoader:
     def __init__(self, directory, glob, loader_cls):

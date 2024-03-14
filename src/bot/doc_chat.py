@@ -121,7 +121,7 @@ class ChatAssistant:
             history.add_ai_message(answer)
             return answer
         else:
-            return "Ask me anything!"
+            return "Ask me anything about wavemaker!"
 
     @staticmethod
     def get_sources(question):

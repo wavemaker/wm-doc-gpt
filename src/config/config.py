@@ -1,8 +1,12 @@
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
 
 #==== Data Location ====#
-# DATA_LOC = "/Users/chiranjeevib_500350/wavemaker/Project/wm-doc-gpt/docs"
+# DATA_LOC = "wm-doc-gpt/docs"
 DATA_LOC = "/app/alldocs"
-FAQ_LOC = "/Users/chiranjeevib_500350/wavemaker/Project/wm-chatbot/Data/output.json"
+FAQ_LOC = "output.json"
 
 #==== Qudarant Conf =====#
 PORT = 6333
@@ -11,11 +15,13 @@ COLLECTION_NAME = "chi1"
 QUDRANT_URL = "http://172.17.0.3:6333"
 PERSIST_DIRECTORY = ""
 FAQ_COLLECTION_NAME = "chi2"
-API_KEY = "your_secret_api_key_here"
+QDRANT_API_KEY = os.getenv("QDRANT__SERVICE__API_KEY")
 
 #==== REDIS ====#
 # REDIS_URL="redis://localhost:6379"
-REDIS_URL="redis://172.17.0.2:6379" 
+REDIS_PASS = os.getenv("REDIS_PASS")
+REDIS_URL = f"redis:{REDIS_PASS}@172.17.0.2:6379"
+
 
 #==== LLM ====#
 MODEL = 'gpt-4-turbo-preview'

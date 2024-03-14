@@ -1,3 +1,6 @@
+import os
+import logging
+from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -5,22 +8,21 @@ from langchain_community.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
 from qdrant_client import models, QdrantClient
 from src.helper.loader import CustomFileLoader, CustomDirectoryLoader
-import os
-from dotenv import load_dotenv
-import logging
 from src.helper.model import SentenceTransformerLoader 
-
 from src.config.config import(
                     HOSTNAME,
                     PORT,
                     QUDRANT_URL,
-                    PERSIST_DIRECTORY
+                    PERSIST_DIRECTORY,
+                    QDRANT_API_KEY
                 )
 
 # load_dotenv()
 # openai_key = os.getenv("OPENAI_API_KEY")
 embedding = OpenAIEmbeddings() 
-qdrant = QdrantClient(HOSTNAME, port=PORT)
+qdrant = QdrantClient(HOSTNAME, 
+                      port=PORT,
+                      api_key=QDRANT_API_KEY)
 encoder = SentenceTransformerLoader.get_model()
 
 class PrepareVectorDB:
@@ -67,7 +69,7 @@ class PrepareVectorDB:
 
             logging.info("Loading documents for chunking")
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=8000, 
+            splitter = RecursiveCharacterTextSplitter(chunk_size=800, 
                                                       chunk_overlap=50)
             chunks = splitter.split_documents(self.data)
 
