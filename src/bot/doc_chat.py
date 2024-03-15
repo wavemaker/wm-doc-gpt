@@ -2,17 +2,16 @@ from langchain.vectorstores import Qdrant
 from qdrant_client import models, QdrantClient
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
-from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from src.helper.prepare_db import PrepareVectorDB
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from src.helper.prepare_db import PrepareVectorDB
 import logging
-
+from flask import jsonify
 from src.config.config import( 
                     DATA_LOC,
                     HOSTNAME,
@@ -26,7 +25,6 @@ from src.config.config import(
 
 class ChatAssistant:
     loaded_chunks = None
-    ensemble_retriever = None 
     keyword_retriever = None
     
     @classmethod
@@ -38,27 +36,38 @@ class ChatAssistant:
 
     @staticmethod
     def rag(session_id, question, url):
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
         embeddings = OpenAIEmbeddings()
-        qdrant = QdrantClient(HOSTNAME, port=PORT)
-        llm = ChatOpenAI(model_name=MODEL, temperature=TEMPERATURE)
-        db = Qdrant(
-            client=qdrant, embeddings=embeddings, collection_name=COLLECTION_NAME)
+        qdrant = QdrantClient(
+                            HOSTNAME, 
+                            port=PORT
+                            )
         
-        vectorstore_retriever = db.as_retriever(search_kwargs={"k": 2})
+        llm = ChatOpenAI(
+                        model_name=MODEL, 
+                        temperature=TEMPERATURE
+                         )
+        
+        db = Qdrant(
+                    client=qdrant, 
+                    embeddings=embeddings, 
+                    collection_name=COLLECTION_NAME
+                    )
+        
+        vectorstore_retriever = db.as_retriever(search_kwargs={"k": 3})
         
         if ChatAssistant.loaded_chunks is None:
             ChatAssistant.load_chunks(DATA_LOC)
 
         if ChatAssistant.keyword_retriever is None:
             ChatAssistant.keyword_retriever = BM25Retriever.from_documents(ChatAssistant.loaded_chunks)
-            ChatAssistant.keyword_retriever.k = 2
+            ChatAssistant.keyword_retriever.k = 3
 
         ensemble_retriever = EnsembleRetriever(
-            retrievers=[vectorstore_retriever, ChatAssistant.keyword_retriever],
-            weights=[0.6, 0.4],
-            return_source_documents=True)
+                        retrievers=[vectorstore_retriever, 
+                        ChatAssistant.keyword_retriever],
+                        weights=[0.6, 0.4],
+                        return_source_documents=True
+                        )
     
         ChatAssistant.ensemble_retriever = ensemble_retriever
 
@@ -70,7 +79,7 @@ class ChatAssistant:
             ]
         )
 
-        contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        contextualize_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", CONTEXTUAL_SYSTEM_MSG),
                 MessagesPlaceholder(variable_name="chat_history"),
@@ -78,12 +87,12 @@ class ChatAssistant:
             ]
         )
 
-        contextualize_q_chain = contextualize_q_prompt | llm | StrOutputParser()
+        contextualize_chain = contextualize_prompt | llm | StrOutputParser()
 
         @staticmethod
         def contextualized_question(input_dict):
             if input_dict.get("chat_history"):
-                return contextualize_q_chain
+                return contextualize_chain
             else:
                 return input_dict["question"]
 
@@ -110,8 +119,12 @@ class ChatAssistant:
 
     @staticmethod
     def answer_question(session_id, question,url):
-        history = RedisChatMessageHistory(session_id, url=url)
-        with_message_history = ChatAssistant.rag(session_id, question,url)
+        history = RedisChatMessageHistory(session_id, 
+                                          url=url)
+        with_message_history = ChatAssistant.rag(session_id, 
+                                                 question,url)
+        docs = ChatAssistant.ensemble_retriever.invoke(question)
+        sources = [doc.metadata['source'] for doc in docs]
         if question:
             answer = str(with_message_history.invoke(
                     {"question": question},
@@ -119,14 +132,7 @@ class ChatAssistant:
                     ))
             history.add_user_message(question)
             history.add_ai_message(answer)
-            return answer
+            return jsonify({'ragAnswer': answer, 
+                            'sources':sources})
         else:
             return "Ask me anything about wavemaker!"
-
-    @staticmethod
-    def get_sources(question):
-        if ChatAssistant.ensemble_retriever is None:
-            raise ValueError("Ensemble retriever not initialized")
-        
-        source_url = ChatAssistant.ensemble_retriever.invoke(question)
-        return source_url

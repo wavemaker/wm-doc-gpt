@@ -47,10 +47,7 @@ def answer_question():
             logging.info("Rag flow initilised for the query")
             assistant = ChatAssistant()
             answer = assistant.answer_question(user_id, question,REDIS_URL)
-            docs = assistant.get_sources(question)
-            sources = [doc.metadata['source'] for doc in docs]
-            return jsonify({'ragAnswer': answer, 
-                            'sources':sources})
+            return answer
         
         else:
             curatedAns = sim_results[0].payload['answer']
@@ -79,9 +76,14 @@ def handle_ingestion():
     elif group == "docs" or group == "website":
         try:
             read_docs = PrepareVectorDB(DATA_LOC)
-            read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
-            response_data = {"message": f"Data ingested successfully with collection: {COLLECTION_NAME}"}
-            return jsonify(response_data)
+            stored_vector = read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
+            if stored_vector != None:
+                response_data = {"message": f"Data ingested successfully with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data)
+            else:
+                response_data = {"message": f"Data ingested Failed with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data)
+            
         
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
@@ -129,4 +131,4 @@ def health():
     return jsonify(health_response)
 
 if __name__ == '__main__':
-    app.run(debug=True , port=5001, host='0.0.0.0')
+    app.run(debug=True , port=5000)

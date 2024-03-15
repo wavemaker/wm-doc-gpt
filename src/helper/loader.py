@@ -8,7 +8,6 @@ class CustomDirectoryLoader:
         self.directory = directory
         self.glob = glob
         self.loader_cls = loader_cls
-        self.logger = logging.getLogger(__name__)
 
     def load(self):
         try:
@@ -29,7 +28,6 @@ class CustomDirectoryLoader:
 class CustomFileLoader:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.logger = logging.getLogger(__name__)
 
     def load(self):
         try:

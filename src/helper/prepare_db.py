@@ -22,7 +22,8 @@ from src.config.config import(
 embedding = OpenAIEmbeddings() 
 qdrant = QdrantClient(HOSTNAME, 
                       port=PORT,
-                      api_key=QDRANT_API_KEY)
+                      #api_key=QDRANT_API_KEY
+                      )
 encoder = SentenceTransformerLoader.get_model()
 
 class PrepareVectorDB:
@@ -48,33 +49,38 @@ class PrepareVectorDB:
                 return self.data
 
             else:
-                loader = CustomDirectoryLoader(self.PATH, glob="**/*.md", loader_cls=TextLoader)
+                loader = CustomDirectoryLoader(self.PATH, 
+                                               glob="**/*.md", 
+                                               loader_cls=TextLoader)
                 self.data = loader.load()
-                logging.info("Loading .md documents is done")
-                return self.data
+                if self.data != None:
+                    logging.info("Loading .md documents is done")
+                    return self.data
+                else:
+                    return None
+                
 
         except FileNotFoundError as e:
             logging.error(f"File or directory not found: {self.PATH}")
+            return None
 
         except Exception as e:
             logging.error(f"Error loading data: {e}")
+            return None
             
     def chunk_documents(self):
         try:
             if self.data is None:
-
                 logging.error("Data is not loaded. Aborting chunk_documents.")
-                
                 return None
 
             logging.info("Loading documents for chunking")
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=800, 
+            splitter = RecursiveCharacterTextSplitter(chunk_size=8000, 
                                                       chunk_overlap=50)
             chunks = splitter.split_documents(self.data)
 
             logging.info("Chunking of the Data is Done")
-
             return chunks
         
         except Exception as e:

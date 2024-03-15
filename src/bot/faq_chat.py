@@ -14,7 +14,8 @@ from src.config.config import (
 
 qdrantClient = QdrantClient(HOSTNAME, 
                             port = PORT,
-                            api_key=QDRANT_API_KEY)
+                            #api_key=QDRANT_API_KEY
+                            )
 
 encoder = SentenceTransformerLoader.get_model()
 
@@ -47,13 +48,13 @@ class CollectionUploadChecker:
             res.create_collection()
             res.upload_to_collection(data)
             logging.info(f"FAQ data uploaded successfully! {self.faq_collection_name}")
-            return " FAQ data uploaded successfully"
+            return "FAQ data uploaded successfully"
 
 
 def search(question):
         hits = qdrantClient.search(
                                 collection_name=FAQ_COLLECTION_NAME,
                                 query_vector=encoder.encode(question).tolist(),
-                                limit=1,
+                                limit=3,
                                 )
         return hits
