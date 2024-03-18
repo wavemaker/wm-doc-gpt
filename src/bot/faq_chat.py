@@ -35,21 +35,27 @@ class CollectionUploadChecker:
                 existing_collection = True
                 break
 
-        read_data = CustomFileLoader(self.FAQ_LOC)
-        data = read_data.load()
+        try:        
+            read_data = CustomFileLoader(self.FAQ_LOC)
+            data = read_data.load()
 
-        if existing_collection:
-            res = SemanticSearch(self.faq_collection_name)
-            res.upload_to_collection(data)
-            logging.info(f"FAQ data uploaded successfully to the existing collection! {self.faq_collection_name}")
-            return "FAQ data uploaded successfully to the existing collection"
-        else:
-            res = SemanticSearch(self.faq_collection_name)
-            res.create_collection()
-            res.upload_to_collection(data)
-            logging.info(f"FAQ data uploaded successfully! {self.faq_collection_name}")
-            return "FAQ data uploaded successfully"
-
+            if data != None:
+                if existing_collection:
+                    res = SemanticSearch(self.faq_collection_name)
+                    res.upload_to_collection(data)
+                    logging.info(f"FAQ data uploaded successfully to the existing collection! {self.faq_collection_name}")
+                    return "FAQ data uploaded successfully to the existing collection"
+                else:
+                    res = SemanticSearch(self.faq_collection_name)
+                    res.create_collection()
+                    res.upload_to_collection(data)
+                    logging.info(f"FAQ data uploaded successfully! {self.faq_collection_name}")
+                    return "FAQ data uploaded successfully"
+            else:
+                return None
+        except Exception as e:
+            logging.error(f"Data not location not found: {e}")
+            return None
 
 def search(question):
         hits = qdrantClient.search(

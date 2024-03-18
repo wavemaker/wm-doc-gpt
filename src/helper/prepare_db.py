@@ -76,8 +76,8 @@ class PrepareVectorDB:
 
             logging.info("Loading documents for chunking")
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=800, 
-                                                      chunk_overlap=50)
+            splitter = RecursiveCharacterTextSplitter(chunk_size=1000, 
+                                                      chunk_overlap=100)
             chunks = splitter.split_documents(self.data)
 
             logging.info("Chunking of the Data is Done")

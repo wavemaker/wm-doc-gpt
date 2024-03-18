@@ -5,16 +5,18 @@ load_dotenv()
 
 #==== Data Location ====#
 # DATA_LOC = "wm-doc-gpt/docs"
-DATA_LOC = "../wm-doc-gpt/test"
-FAQ_LOC = "output.json"
+DATA_LOC = "../docs_latest"
+FAQ_LOC = "../output.json"
 
 #==== Qudarant Conf =====#
 PORT = 6333
 HOSTNAME = 'localhost'
-COLLECTION_NAME = "chi3"
+COLLECTION_NAME = "test2"
+# COLLECTION_NAME = "prod1"
+# COLLECTION_NAME = "chi10"
 QUDRANT_URL = f"http://{HOSTNAME}:6333"
 PERSIST_DIRECTORY = ""
-FAQ_COLLECTION_NAME = "chi2"
+FAQ_COLLECTION_NAME = "chi4"
 QDRANT_API_KEY = os.getenv("QDRANT__SERVICE__API_KEY")
 
 #==== REDIS ====#

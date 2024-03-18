@@ -53,22 +53,25 @@ class ChatAssistant:
                     collection_name=COLLECTION_NAME
                     )
         
-        vectorstore_retriever = db.as_retriever(search_kwargs={"k": 3})
+        vectorstore_retriever = db.as_retriever(search_kwargs={"k": 5})
         
         if ChatAssistant.loaded_chunks is None:
             ChatAssistant.load_chunks(DATA_LOC)
 
         if ChatAssistant.keyword_retriever is None:
             ChatAssistant.keyword_retriever = BM25Retriever.from_documents(ChatAssistant.loaded_chunks)
-            ChatAssistant.keyword_retriever.k = 3
+            ChatAssistant.keyword_retriever.k = 5
+        
+        ChatAssistant.keyword_retriever.k = 5
 
         ensemble_retriever = EnsembleRetriever(
                         retrievers=[vectorstore_retriever, 
-                        ChatAssistant.keyword_retriever],
-                        weights=[0.6, 0.4],
+                                    ChatAssistant.keyword_retriever
+                                    ],
+                        weights=[0.5, 0.5],
                         return_source_documents=True
                         )
-    
+
         ChatAssistant.ensemble_retriever = ensemble_retriever
 
         qa_prompt = ChatPromptTemplate.from_messages(

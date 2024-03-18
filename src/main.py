@@ -30,6 +30,7 @@ app.permanent_session_lifetime = timedelta(hours=1)
 @app.route('/answer', methods=['POST'])
 def answer_question():
     if 'user_id' not in session:
+        print("session",session)
         user_id = str(uuid.uuid4())
         session['user_id'] = user_id
     else:
@@ -66,9 +67,14 @@ def handle_ingestion():
     if group == "FAQ":
         try:
             faq_collection = CollectionUploadChecker(FAQ_COLLECTION_NAME, FAQ_LOC)
-            faq_collection.check_collection_upload_data()
-            response_data = {"message": f"Data ingested successfully with collection: {FAQ_COLLECTION_NAME}"}
-            return jsonify(response_data)
+            vectors = faq_collection.check_collection_upload_data()
+            
+            if vectors != None:
+                response_data = {"message": f"Data ingested successfull with collection: {FAQ_COLLECTION_NAME}"}
+                return jsonify(response_data)
+            else:
+                response_data = {"message": f"Data ingested failed with collection: {FAQ_COLLECTION_NAME}"}
+                return jsonify(response_data)
         
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
@@ -78,10 +84,10 @@ def handle_ingestion():
             read_docs = PrepareVectorDB(DATA_LOC)
             stored_vector = read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
             if stored_vector != None:
-                response_data = {"message": f"Data ingested successfully with collection: {COLLECTION_NAME}"}
+                response_data = {"message": f"Data ingested successfull with collection: {COLLECTION_NAME}"}
                 return jsonify(response_data)
             else:
-                response_data = {"message": f"Data ingested Failed with collection: {COLLECTION_NAME}"}
+                response_data = {"message": f"Data ingested failed with collection: {COLLECTION_NAME}"}
                 return jsonify(response_data)
             
         
@@ -129,6 +135,3 @@ def scrape():
 def health():
     health_response = {"message": "Health check successful"}
     return jsonify(health_response)
-
-if __name__ == '__main__':
-    app.run(debug=True , port=5000)
