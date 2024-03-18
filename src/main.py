@@ -3,7 +3,6 @@ import csv
 import uuid
 from datetime import timedelta
 import logging
-from dotenv import load_dotenv
 from flask import Flask, request, jsonify, session
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from urllib.parse import urlparse
@@ -23,8 +22,7 @@ from src.config.config import (
 
 app = Flask(__name__)
 
-load_dotenv()
-app.secret_key = os.getenv("SECRET_KEY")
+app.secret_key = os.environ["SECRET_KEY"]
 app.permanent_session_lifetime = timedelta(hours=1)
 
 @app.route('/answer', methods=['POST'])
@@ -135,3 +133,4 @@ def scrape():
 def health():
     health_response = {"message": "Health check successful"}
     return jsonify(health_response)
+
