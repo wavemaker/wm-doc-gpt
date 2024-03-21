@@ -155,3 +155,4 @@ class SemanticSearch:
         
         except Exception as e:
             self.logger.error(f"Error occurred: {e}")
+    

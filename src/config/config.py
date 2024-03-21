@@ -4,13 +4,12 @@ load_dotenv()
 
 
 #==== Data Location ====#
-# DATA_LOC = "wm-doc-gpt/docs"
+DATA_LOC = "/data/"
 
-# DATA_LOC = "all_docs/wavemaker_website"
-FAQ_LOC = "/data/production-salesbot/faq/output.json"
-GITHUB_DOCS = "/data/production-salesbot/docs"
-WAVEMAKER_WEBSITE = "/data/production-salesbot/wavemaker_website"
-WAVEMAKER_AI = "/data/production-salesbot/wavemaker_AI"
+FAQ_LOC = "/data/faq/output.json"
+GITHUB_DOCS = "/data/docs"
+WAVEMAKER_WEBSITE = "/data/wavemaker_website"
+WAVEMAKER_AI = "/data/wavemaker_AI"
 
 #==== Qudarant Conf =====#
 PORT = 6333

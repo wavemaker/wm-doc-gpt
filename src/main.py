@@ -6,18 +6,25 @@ import logging
 from flask import Flask, request, jsonify, session
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from urllib.parse import urlparse
+from qdrant_client import models, QdrantClient
 from src.helper.scrapper import Scraper
 from src.helper.prepare_db import PrepareVectorDB
 from src.bot.faq_chat import CollectionUploadChecker
 from src.bot.faq_chat import search
 from src.bot.doc_chat import ChatAssistant
-
 from src.config.config import (
         COLLECTION_NAME, 
-        DATA_LOC,
+        # DATA_LOC,
         REDIS_URL,
         FAQ_LOC,
-        FAQ_COLLECTION_NAME
+        FAQ_COLLECTION_NAME,
+        GITHUB_DOCS,
+        WAVEMAKER_WEBSITE,
+        WAVEMAKER_AI,
+        FILES_FROM_REQUEST,
+        UPLOAD_SCRAPPED_DATA,
+        HOSTNAME,
+        PORT
 )
 
 app = Flask(__name__)
@@ -77,18 +84,38 @@ def handle_ingestion():
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
 
-    elif group == "docs" or group == "website":
+    elif group == "docs" or group == "website" or group == "ai_website":
         try:
-            read_docs = PrepareVectorDB(DATA_LOC)
-            stored_vector = read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
-            if stored_vector != None:
-                response_data = {"message": f"Data ingested successfull with collection: {COLLECTION_NAME}"}
-                return jsonify(response_data)
-            else:
-                response_data = {"message": f"Data ingested failed with collection: {COLLECTION_NAME}"}
-                return jsonify(response_data)
+            if group == "docs":
+                read_docs = PrepareVectorDB(GITHUB_DOCS)
+                stored_vector = read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
+                if stored_vector != None:
+                    response_data = {"message": f"Docs data ingested successfull with collection: {COLLECTION_NAME}"}
+                    return jsonify(response_data)
+                else:
+                    response_data = {"message": f"Docs data ingested failed with collection: {COLLECTION_NAME}"}
+                    return jsonify(response_data)
             
-        
+            elif group == "website":
+                read_docs = PrepareVectorDB(WAVEMAKER_WEBSITE)
+                stored_vector = read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
+                if stored_vector != None:
+                    response_data = {"message": f"Website data ingested successfull with collection: {COLLECTION_NAME}"}
+                    return jsonify(response_data)
+                else:
+                    response_data = {"message": f"Website data ingested failed with collection: {COLLECTION_NAME}"}
+                    return jsonify(response_data)
+            
+            elif group == "ai_website": 
+                read_docs = PrepareVectorDB(WAVEMAKER_AI)
+                stored_vector = read_docs.prepare_and_save_vectordb(COLLECTION_NAME)
+                if stored_vector != None:
+                    response_data = {"message": f"Wavemakerai website data ingested successfull with collection: {COLLECTION_NAME}"}
+                    return jsonify(response_data)
+                else:
+                    response_data = {"message": f"Wavemakerai website data ingested failed with collection: {COLLECTION_NAME}"}
+                    return jsonify(response_data)  
+            
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
 
@@ -104,15 +131,15 @@ def scrape():
         file = request.files['file']
         
         #======Store the files from the request============#
-        file.save(os.path.join("data", file.filename))
-        with open(os.path.join("data", file.filename), 'r') as csvfile:
+        file.save(os.path.join(FILES_FROM_REQUEST, file.filename))
+        with open(os.path.join(FILES_FROM_REQUEST, file.filename), 'r') as csvfile:
             reader = csv.DictReader(csvfile)
             urls.extend(row['URL'] for row in reader)
     else:
         return jsonify({"error": "No URL or CSV file provided"}), 400
     
     #======Store the scraped files in the s3============#
-    folder_path = os.path.join(os.getcwd(), '/Users/chiranjeevib_500350/wavemaker/Project/wm-doc-gpt/ai_docs') 
+    folder_path = os.path.join(os.getcwd(), UPLOAD_SCRAPPED_DATA) 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
@@ -127,7 +154,15 @@ def scrape():
 
         with open(file_path, 'w') as file:
             file.write(parsed_html.cleaned_text)
-    return jsonify({"message": "Scraping completed successfully"}), 200
+    return jsonify({"message": "Scraping is successfull"}), 200
+
+@app.route('/delete_collection', methods=['GET'])
+def del_collection():
+    collection_name = request.args.get('collection')
+    client = QdrantClient(HOSTNAME, port=PORT)
+    client.delete_collection(collection_name=collection_name)
+    collection_response = {"message": "Collection deleted"}
+    return jsonify(collection_response)
 
 @app.route('/health', methods=['GET'])
 def health():
