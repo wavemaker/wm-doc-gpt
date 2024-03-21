@@ -112,7 +112,7 @@ def scrape():
         return jsonify({"error": "No URL or CSV file provided"}), 400
     
     #======Store the scraped files in the s3============#
-    folder_path = os.path.join(os.getcwd(), 'docs') 
+    folder_path = os.path.join(os.getcwd(), '/Users/chiranjeevib_500350/wavemaker/Project/wm-doc-gpt/ai_docs') 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 

@@ -128,14 +128,46 @@ class ChatAssistant:
                                                  question,url)
         docs = ChatAssistant.ensemble_retriever.invoke(question)
         sources = [doc.metadata['source'] for doc in docs]
+
+        def add_website_url(file_path):
+            website_url = 'https://docs.wavemaker.com'
+            if 'learn' in file_path:
+                trimmed_path = file_path.replace('.md', '')
+
+                result_url = f"{website_url}/learn{trimmed_path.split('learn')[1]}"
+                return result_url
+            elif 'blog' in file_path:
+                date_parts = file_path.split('/')[-1].split('-')
+                formatted_date = '/'.join(date_parts[:3]) if len(date_parts) >= 3 else ""
+
+                title_parts = file_path.split('/')[-1].split('-')
+                title = '-'.join(title_parts[3:]) if len(title_parts) >= 4 else ""
+
+                # Remove .md extension from title
+                if title.endswith('.md'):
+                    title = title[:-3]
+
+                result_url = f"{website_url}/learn/blog/{formatted_date}/{title}/"
+                return result_url
+            else:
+                return 
+
+        sou = []
+        for doc in docs:
+            # print(doc.metadata['source'])
+            sou.append(add_website_url(doc.metadata['source']))
+
         if question:
             answer = str(with_message_history.invoke(
                     {"question": question},
                     config={"configurable": {"session_id": session_id}},
                     ))
+            answer = answer.replace("content=", "")
             history.add_user_message(question)
             history.add_ai_message(answer)
             return jsonify({'ragAnswer': answer, 
-                            'sources':sources})
+                            'sources':sou})
         else:
             return "Ask me anything about wavemaker!"
+
+

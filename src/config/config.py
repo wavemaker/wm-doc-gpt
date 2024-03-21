@@ -6,13 +6,16 @@ load_dotenv()
 #==== Data Location ====#
 # DATA_LOC = "wm-doc-gpt/docs"
 
-DATA_LOC = "/app/alldoc"
-FAQ_LOC = "/app/alldoc/faq/output.json"
+# DATA_LOC = "all_docs/wavemaker_website"
+FAQ_LOC = "/data/production-salesbot/faq/output.json"
+GITHUB_DOCS = "/data/production-salesbot/docs"
+WAVEMAKER_WEBSITE = "/data/production-salesbot/wavemaker_website"
+WAVEMAKER_AI = "/data/production-salesbot/wavemaker_AI"
 
 #==== Qudarant Conf =====#
 PORT = 6333
 HOSTNAME = 'qdrant'
-COLLECTION_NAME = "WAVE1"
+COLLECTION_NAME = "WAVE"
 QUDRANT_URL = f"http://qdrant:6333"
 PERSIST_DIRECTORY = ""
 FAQ_COLLECTION_NAME = "FAQ"
@@ -32,8 +35,6 @@ EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
 SYSTEM_MSG = """
             <|system|>
             You are an assistant developed for WaveMaker by WaveMaker, drawing from the provided data. 
-            If you encounter a question to which you don't know the answer, simply respond with 
-            'Sorry, I'm not familiar with this question. Please visit 'https://www.wavemaker.com/'.
             Any queries beyond the scope of the provided context should be redirected please ask the 
             questions related to WaveMaker.
             CONTEXT: {context}
