@@ -10,13 +10,18 @@ class CustomDirectoryLoader:
         self.loader_cls = loader_cls
 
     def load(self):
+        
         try:
-            loader = DirectoryLoader(self.directory, glob=self.glob, loader_cls=self.loader_cls)
+            loader = DirectoryLoader(self.directory, 
+                                     glob=self.glob, 
+                                     loader_cls=self.loader_cls)
             data = loader.load()
             return data
+        
         except FileNotFoundError as e:
             logging.error(f"Directory not found: {self.directory}")
             return None
+        
         except Exception as e:
             logging.error(f"Error loading data: {e}")
             return None
@@ -35,13 +40,16 @@ class CustomFileLoader:
                 with open(self.file_path, 'r') as file:
                     data = json.load(file)
                 return data
+            
             elif self.file_path.endswith('.csv'):
                 with open(self.file_path, 'r') as file:
                     reader = pd.read_csv(file)
                 return reader
+        
         except FileNotFoundError as e:
             logging.error(f"File not found: {self.file_path}")
             return None
+        
         except Exception as e:
             logging.error(f"Error loading data from {self.file_path}: {e}")
             return None

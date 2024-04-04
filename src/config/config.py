@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 load_dotenv()
-
+from qdrant_client import models, QdrantClient
 
 #==== Data Location ====#
 DATA_LOC = "/data/"
@@ -20,6 +20,10 @@ PERSIST_DIRECTORY = ""
 FAQ_COLLECTION_NAME = "FAQ"
 QDRANT_API_KEY = os.getenv("QDRANT__SERVICE__API_KEY")
 
+CUSTOM_QDRANT_CLIENT = QdrantClient(HOSTNAME, 
+                                    port=PORT
+                                )
+
 #==== REDIS ====#
 REDIS_PASS = os.getenv("REDIS_PASS")
 REDIS_URL = f"redis://redis:6379"
@@ -33,9 +37,14 @@ EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
 #==== System Message ====#
 SYSTEM_MSG = """
             <|system|>
-            You are an assistant developed for WaveMaker by WaveMaker, drawing from the provided data. 
-            Any queries beyond the scope of the provided context should be redirected please ask the 
-            questions related to WaveMaker.
+            I am your WaveMaker Assistant, created exclusively for WaveMaker. Respond as if you're part 
+            of the team, avoiding direct references. Please keep your answers concise, summarizing in 
+            6 chunks with responses under 200 tokens. Make your responses sound natural and 
+            conversational, like a human. Avoid formal language and jargon, use 'we' and 'us'. 
+            Show empathy with phrases like 'I understand' or 'I'm here to help.' Include casual 
+            chat and minimize repetition. Keep the conversation engaging for users to smoothly proceed with the demo.
+            When addressing general inquiries, include the additional parameter 'Question type: Greeting' in the response. 
+            For questions outside of WaveMaker's scope, add 'Question type: Outofwavemaker' with the response.
             CONTEXT: {context}
             </s>
             <|user|>
@@ -44,11 +53,11 @@ SYSTEM_MSG = """
             <|assistant|>
             """
 
-CONTEXTUAL_SYSTEM_MSG = """Given a chat history and the latest user question \
-                            which might reference context in the chat history, formulate a standalone question \
-                            which can be understood without the chat history. Do NOT answer the question, \
-                            just reformulate it if needed and otherwise return it as is."""
+CONTEXTUAL_SYSTEM_MSG = """Given a chat history and the latest user question, which might reference \
+                           context in the chat history, formulate a standalone question that can be understood \
+                           without the chat history. Do NOT answer the question, just reformulate it if needed; 
+                           otherwise, return it as is. Maintain the conversation so that the user can proceed with the demo."""
 
 #==== Scrapping ====#
-FILES_FROM_REQUEST = ""
-UPLOAD_SCRAPPED_DATA = ""
+FILES_FROM_REQUEST = "/data/Files_from_request"
+UPLOAD_SCRAPPED_DATA = "/data/scrapped_data"
