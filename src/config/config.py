@@ -6,8 +6,7 @@ from qdrant_client import models, QdrantClient
 #==== Data Location ====#
 DATA_LOC = "/data/"
 
-# FAQ_LOC = "/data/faq/output.json"
-FAQ_LOC = "../data/faq/output.json"
+FAQ_LOC = "/data/faq/output.json"
 GITHUB_DOCS = "/data/docs"
 WAVEMAKER_WEBSITE = "/data/wavemaker_website"
 WAVEMAKER_AI = "/data/wavemaker_AI"
@@ -16,7 +15,7 @@ WAVEMAKER_AI = "/data/wavemaker_AI"
 PORT = 6333
 HOSTNAME = 'qdrant'
 COLLECTION_NAME = "WAVE"
-QUDRANT_URL = f"http://localhost:6333"
+QUDRANT_URL = f"http://qdrant:6333"
 PERSIST_DIRECTORY = ""
 FAQ_COLLECTION_NAME = "FAQ"
 QDRANT_API_KEY = os.getenv("QDRANT__SERVICE__API_KEY")
