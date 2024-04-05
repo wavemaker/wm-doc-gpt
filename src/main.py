@@ -94,8 +94,12 @@ def handle_ingestion():
                                                          json_filename)
                 vectors = faq_collection.check_collection_upload_data()
                 
-                destination_filename = os.path.join(FAQ_LOC)
-                
+                destination_filename = FAQ_LOC
+
+                if not os.path.exists(destination_filename):
+                    with open(destination_filename, 'w') as new_file:
+                        json.dump({}, new_file)
+
                 with open(json_filename, 'r') as json_file:
                     source_data = json.load(json_file)
     
@@ -187,6 +191,9 @@ def scrape():
         file = request.files['file']
         
         #======Store the files from the request============#
+        if not os.path.exists(FILES_FROM_REQUEST):
+            os.makedirs(FILES_FROM_REQUEST)
+
         file.save(os.path.join(FILES_FROM_REQUEST, file.filename))
         with open(os.path.join(FILES_FROM_REQUEST, file.filename), 'r') as csvfile:
             reader = csv.DictReader(csvfile)
@@ -195,6 +202,9 @@ def scrape():
         return jsonify({"error": "No URL or CSV file provided"}), 400
     
     #======Store the scraped files in the s3============#
+    if not os.path.exists(UPLOAD_SCRAPPED_DATA):
+        os.makedirs(UPLOAD_SCRAPPED_DATA)
+
     folder_path = os.path.join(os.getcwd(), UPLOAD_SCRAPPED_DATA) 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
