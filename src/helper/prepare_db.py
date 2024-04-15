@@ -97,7 +97,7 @@ class PrepareVectorDB:
             logging.error(f"Error chunking documents: {e}")
             return None
 
-    def prepare_and_save_vectordb(self,COLLECTION_NAME):
+    def prepare_and_save_vectordb(self):
         self.load_data()
 
         if self.data is None:
@@ -216,9 +216,11 @@ class PrepareAndSaveScrappedData():
             self.check_and_create_collection(COLLECTION_NAME)
             qdrant_scraper_client.add_texts(content_list, source_list)
             logging.info("Data added to db using the add_texts method")
-            
+
             content_list.clear()
             source_list.clear()
+            
+            return True
             
         except Exception as e:
             logging.error(f"An error occurred in prepare_and_save_scrapped_data: {str(e)}")

@@ -69,26 +69,27 @@ def answer_question():
                             'question':sim_results[0].payload['question'], 
                             'answer': sim_results[0].payload['answer']})
 
-@app.route('/ingest', methods=['GET'])
+@app.route('/ingest', methods=['POST', 'PUT', 'DELETE'])
 def handle_ingestion():
-    group = request.form['group']
+    # group = request.form['group']
+    group = request.args.get('group')
+
     
     if group is None:
         return jsonify({"error": "Missing required query parameters"}), 400
     
     if group == "FAQ":
         try:
-            operation = request.form["operation"]
-            if operation == "Add" or operation == "Update":
-                json_data = request.files['Json_data']
+            if request.method == 'POST' or request.method == 'PUT':
+                json_data = request.json
                 faq_data = "temp_faq_datastore"
                 
                 if not os.path.exists(faq_data):
                     os.makedirs(faq_data)
                 
-                json_filename = os.path.join(faq_data, 
-                                             json_data.filename)
-                json_data.save(json_filename)
+                json_filename = os.path.join(faq_data, "data.json")
+                with open(json_filename, 'w') as json_file:
+                    json.dump([json_data], json_file, indent=4)
 
                 faq_collection = CollectionUploadChecker(FAQ_COLLECTION_NAME,
                                                          json_filename)
@@ -120,7 +121,7 @@ def handle_ingestion():
                     response_data = {"message": f"Data ingestion failed with collection: {FAQ_COLLECTION_NAME}"}
                     return jsonify(response_data)
                 
-            elif operation == "Delete":
+            elif request.method == 'DELETE':
 
                 id = request.args.get("id")
 
@@ -179,7 +180,7 @@ def handle_ingestion():
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
 
-@app.route('/scrape', methods=['POST'])
+@app.route('/scrape', methods=['POST', 'PUT', 'DELETE'])
 def scrape():
     logging.info("scraping is started!")
     urls = []
@@ -200,7 +201,7 @@ def scrape():
             urls.extend(row['URL'] for row in reader)
     else:
         return jsonify({"error": "No URL or CSV file provided"}), 400
-    
+
     #======Store the scraped files in the s3============#
     if not os.path.exists(UPLOAD_SCRAPPED_DATA):
         os.makedirs(UPLOAD_SCRAPPED_DATA)
@@ -208,14 +209,17 @@ def scrape():
     folder_path = os.path.join(os.getcwd(), UPLOAD_SCRAPPED_DATA) 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-
-    if request.form['operation'] == "Add":
+        
+    if request.method == "POST":
         try:
+            success_flag = False
+            
             for url in urls:
                 parsed_html, error = Scraper.scrape_website(url)
                 
                 if error:
-                    return jsonify({"error": str(error)}), 500
+                    logging.error(f"Error scraping website data: {error}")
+                    continue
 
                 parsed_url = urlparse(url)
                 filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
@@ -238,91 +242,96 @@ def scrape():
                     with open(wavemaker_file_path, 'w') as file:
                         file.write(parsed_html.cleaned_text)
 
-                if stored_vector is not None:
-                    response_data = {"message": f"Website data ingested successfully with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data), 200
+                    success_flag = True
 
-                else:
-                    response_data = {"message": f"Website data ingestion failed with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data), 500
+            if success_flag:
+                response_data = {"message": f"Website data ingested successfully with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data), 200
+            else:
+                response_data = {"message": f"Website data ingestion failed with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data), 500
 
         except Exception as e:
             logging.error(f"Error ingesting website data: {e}")
             response_data = {"message": f"Internal server error: {e}"}
             return jsonify(response_data), 500
-
-
-    elif request.form['operation'] == "Update":
-        for url in urls:
-            parsed_html, error = Scraper.scrape_website(url)
-            
-            if error:
-                return jsonify({"error": str(error)}), 500
-
-            parsed_url = urlparse(url)
-            filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
-            file_path = os.path.join(folder_path, filename)
-
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            with open(file_path, 'w') as file:
-                file.write(parsed_html.cleaned_text)
-            
-            wavemaker_file_path = os.path.join(WAVEMAKER_WEBSITE, filename)
-            
-            if os.path.exists(wavemaker_file_path):
-                os.remove(wavemaker_file_path)
-            with open(wavemaker_file_path, 'w') as file:
-                file.write(parsed_html.cleaned_text)
-            
-            full_url = WAVEMAKER_WEBSITE + '/' + filename
-            delete_duplicates = DeleteDuplicates(full_url, COLLECTION_NAME)
-            all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(collection_name=COLLECTION_NAME)
-            result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)
-
-            if result_id is None:
-                try:
-                    read_docs = PrepareVectorDB(UPLOAD_SCRAPPED_DATA)
-                    stored_vector = read_docs.prepare_and_save_vectordb()
-                    if stored_vector is not None:
-                        response_data = {"message": f"Website data ingested successfully with collection: {COLLECTION_NAME}"}
-                        return jsonify(response_data), 200
-                    
-                    else:
-                        response_data = {"message": f"Website data ingestion failed with collection: {COLLECTION_NAME}"}
-                        return jsonify(response_data), 500
-                    
-                except Exception as e:
-                    logging.error(f"Error ingesting website data: {e}")
-                    response_data = {"message": f"Internal server error: {e}"}
-                    return jsonify(response_data), 500
-            else:
-                try:
-                    delete_duplicates.delete_vector(result_id)
-                    read_docs = PrepareVectorDB(UPLOAD_SCRAPPED_DATA)
-                    stored_vector = read_docs.prepare_and_save_vectordb()
-
-                    if stored_vector is not None:
-                        response_data = {"message": f"Website data ingested successfully with collection: {COLLECTION_NAME}"}
-                        return jsonify(response_data), 200
-                    
-                    else:
-                        response_data = {"message": f"Website data ingestion failed with collection: {COLLECTION_NAME}"}
-                        return jsonify(response_data), 500
-                    
-                except Exception as e:
-                    logging.error(f"Error ingesting website data: {e}")
-                    response_data = {"message": f"Internal server error: {e}"}
-                    return jsonify(response_data), 500
-            
-    elif request.form['operation'] == "Delete":
+    
+    elif request.method == "PUT":
         try:
-            error = None  
+            success_flag = False
+            
             for url in urls:
+                parsed_html, error = Scraper.scrape_website(url)
                 
                 if error:
-                    return jsonify({"error": str(error)}), 500
+                    logging.error(f"Error scraping website data: {error}")
+                    continue
+
+                parsed_url = urlparse(url)
+                filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
+                file_path = os.path.join(folder_path, filename)
+
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                with open(file_path, 'w') as file:
+                    file.write(parsed_html.cleaned_text)
                 
+                wavemaker_file_path = os.path.join(WAVEMAKER_WEBSITE, filename)
+                
+                if os.path.exists(wavemaker_file_path):
+                    os.remove(wavemaker_file_path)
+                with open(wavemaker_file_path, 'w') as file:
+                    file.write(parsed_html.cleaned_text)
+                
+                full_url = WAVEMAKER_WEBSITE + '/' + filename
+                delete_duplicates = DeleteDuplicates(full_url, COLLECTION_NAME)
+                all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(collection_name=COLLECTION_NAME)
+                result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)
+
+                if result_id is None:
+                    try:
+                        read_docs = PrepareVectorDB(UPLOAD_SCRAPPED_DATA)
+                        stored_vector = read_docs.prepare_and_save_vectordb()
+                        if stored_vector is not None:
+                            success_flag = True
+                        else:
+                            logging.error(f"Website data ingestion failed with collection: {COLLECTION_NAME}")
+                        
+                    except Exception as e:
+                        logging.error(f"Error ingesting website data: {e}")
+                    
+                else:
+                    try:
+                        delete_duplicates.delete_vector(result_id)
+                        read_docs = PrepareVectorDB(UPLOAD_SCRAPPED_DATA)
+                        stored_vector = read_docs.prepare_and_save_vectordb()
+
+                        if stored_vector is not None:
+                            success_flag = True
+                        else:
+                            logging.error(f"Website data ingestion failed with collection: {COLLECTION_NAME}")
+                        
+                    except Exception as e:
+                        logging.error(f"Error ingesting website data: {e}")
+            
+            if success_flag:
+                response_data = {"message": f"Website data ingested and updated successfully with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data), 200
+            else:
+                response_data = {"message": f"Website data ingestion failed with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data), 500
+
+        except Exception as e:
+            logging.error(f"Internal server error: {e}")
+            response_data = {"message": f"Internal server error: {e}"}
+            return jsonify(response_data), 500
+
+            
+    elif request.method == "DELETE":
+        try:
+            success_flag = False
+            
+            for url in urls:
                 parsed_url = urlparse(url)
                 filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
                 file_path = os.path.join(folder_path, filename)
@@ -340,15 +349,18 @@ def scrape():
                 result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)
                 deleted_data = delete_duplicates.delete_vector(result_id)
                 
-                if deleted_data:
-                    response_data = {"message": "Website data deleted successfully"}
-                    logging.INFO("Website data deleted successfully")
-                    return jsonify(response_data), 200
-                else:
-                    response_data = {"message": "Website data deletion unsuccessful"}
-                    logging.error("Error deleting website data")
-                    return jsonify(response_data)
-                    
+                if deleted_data is not None:
+                    success_flag = True
+                    logging.info("Website data deleted successfully")
+
+            if success_flag:
+                response_data = {"message": "Website data deleted successfully"}
+                return jsonify(response_data), 200
+            else:
+                response_data = {"message": "Website data deletion unsuccessful"}
+                logging.error("Error deleting website data")
+                return jsonify(response_data), 500
+
         except Exception as e:
             logging.error(f"Error deleting website data: {e}")
             response_data = {"message": f"Internal server error: {e}"}
