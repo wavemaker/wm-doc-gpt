@@ -32,7 +32,7 @@ REDIS_URL = f"redis://redis:6379"
 #==== LLM ====#
 MODEL = 'gpt-4-turbo-preview'
 TEMPERATURE = 0
-EMBEDDING_MODEL = 'all-mpnet-base-v2'
+EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
 
 #==== System Message ====#
 SYSTEM_MSG = """
