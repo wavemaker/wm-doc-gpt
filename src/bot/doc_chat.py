@@ -191,10 +191,9 @@ class ChatAssistant:
                     {"question": question},
                     config={"configurable": {"session_id": session_id}},
                     ))
-            
+                        
             if answer.startswith("content="):
-                answer = answer[len("content="):]
-                content_without_quotes = answer.replace("'", "")
+                content_without_quotes = answer.replace("content=", "")
                 
             history.add_user_message(question)
             history.add_ai_message(answer)
