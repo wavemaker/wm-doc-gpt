@@ -243,9 +243,11 @@ class SemanticSearch:
                             vectors_config=vectors_config
                             )
             self.logger.info(f"Successfully created collection with collection name as:{FAQ_COLLECTION_NAME}.")
+            return True
 
         except Exception as e:
             self.logger.error(f"Error occurred: {e}")
+            return False
     
     def upload_and_update_collection(self, faqdata):
         try:
@@ -261,9 +263,11 @@ class SemanticSearch:
                 points=points
             )
             self.logger.info(f"Successfully uploaded data to collection for {FAQ_COLLECTION_NAME}.")
+            return True
+        
         except Exception as e:
             self.logger.error(f"Failed to upload data to collection: {e}")
-
+            return False
     def delete_qan(self, id_val):
         try:
             CUSTOM_QDRANT_CLIENT.delete(
@@ -278,7 +282,8 @@ class SemanticSearch:
                         )
                 )
             self.logger.info("Successfully deleted data from the collection.")
-            return True  
+            return True
+          
         except Exception as e:
             self.logger.error(f"Failed to delete data from the collection: {e}")
             return False  
@@ -290,19 +295,20 @@ class DeleteDuplicates:
         self.logger = logging.getLogger(__name__)
 
     def get_id_from_source(self, data, source):
-        try:
-            ids = []
-            for record in data:
-                if record.payload['metadata']['source'] == source:
-                    ids.append(record.id)
+            try:
+                filename = os.path.basename(source)
+                ids = []
+                for record in data:
+                    record_source = record.payload.get('metadata', {}).get('source')
+                    if record_source and os.path.basename(record_source) == filename:
+                        ids.append((record.id))
+                if not ids:
+                    return None
+                return ids
             
-            if not ids:
+            except Exception as e:
+                self.logger.error(f"Error getting IDs from source: {e}")
                 return None
-            return ids
-        
-        except Exception as e:
-            self.logger.error(f"Error getting IDs from source: {e}")
-            return None
 
     
     def delete_vector(self, ids):
@@ -318,7 +324,9 @@ class DeleteDuplicates:
                     ),
                 )
             self.logger.info("Vectors deleted successfully.")
+            return True
         
         except Exception as e:
             self.logger.error(f"Error deleting vectors: {e}")
+            return False
 

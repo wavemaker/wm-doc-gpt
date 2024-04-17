@@ -34,23 +34,37 @@ class CollectionUploadChecker:
             read_data = CustomFileLoader(self.faq_data_loc)
             data = read_data.load()
 
-            if data != None:
+            if data is not None:
                 if existing_collection:
                     res = SemanticSearch()
-                    res.upload_and_update_collection(data)
-                    logging.info(f"FAQ data uploaded successfully to the existing collection! {self.faq_collection_name}")
-                    return "FAQ data uploaded successfully to the existing collection"
+                    if res.upload_and_update_collection(data):
+                        message = f"FAQ data uploaded successfully to the existing collection! {self.faq_collection_name}"
+                        logging.info(message)
+                        return True, message
+                    else:
+                        message = "Failed to upload FAQ data to the existing collection"
+                        logging.error(message)
+                        return False
                 else:
                     res = SemanticSearch()
-                    res.create_collection()
-                    res.upload_and_update_collection(data)
-                    logging.info(f"FAQ data uploaded successfully! {self.faq_collection_name}")
-                    return "FAQ data uploaded successfully"
+                    if res.create_collection():
+                        if res.upload_and_update_collection(data):
+                            message = f"FAQ data uploaded successfully! {self.faq_collection_name}"
+                            logging.info(message)
+                            return True
+                        else:
+                            message = "Failed to upload FAQ data"
+                            logging.error(message)
+                            return False, message
+                    else:
+                        message = "Failed to create collection"
+                        logging.error(message)
+                        return False
             else:
-                return None
+                return False
         except Exception as e:
-            logging.error(f"Data not location not found: {e}")
-            return None
+            logging.error(f"Data location not found: {e}")
+            return False
 
 
 def search(question):

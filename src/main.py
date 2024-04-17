@@ -7,6 +7,7 @@ import logging
 from flask import Flask, request, jsonify, session
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from urllib.parse import urlparse
+from werkzeug.utils import secure_filename
 from qdrant_client import models, QdrantClient
 from src.helper.scrapper import Scraper
 from src.helper.prepare_db import PrepareVectorDB
@@ -33,7 +34,7 @@ from src.config.config import (
 app = Flask(__name__)
 
 app.secret_key = os.environ["SECRET_KEY"]
-app.permanent_session_lifetime = timedelta(hours=1)
+app.permanent_session_lifetime = timedelta(minutes=5)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
@@ -80,21 +81,30 @@ def handle_ingestion():
     
     if group == "FAQ":
         try:
-            if request.method == 'POST' or request.method == 'PUT':
-                json_data = request.json
-                faq_data = "temp_faq_datastore"
+            if request.method == "POST":
+                file = request.files.get('file')
+                if file :
+                    filename = secure_filename(file.filename)
+                    faq_data = "temp_faq_datastore"
+                    if not os.path.exists(faq_data):
+                        os.makedirs(faq_data)
+                    
+                    json_filename = os.path.join(faq_data, filename)
+                    file.save(json_filename)
+                else:    
+                    json_data = request.json
+                    faq_data = "temp_faq_datastore"
                 
-                if not os.path.exists(faq_data):
-                    os.makedirs(faq_data)
-                
-                json_filename = os.path.join(faq_data, "data.json")
-                with open(json_filename, 'w') as json_file:
-                    json.dump([json_data], json_file, indent=4)
+                    if not os.path.exists(faq_data):
+                        os.makedirs(faq_data)
+                    
+                    json_filename = os.path.join(faq_data, "data.json")
+                    with open(json_filename, 'w') as json_file:
+                        json.dump([json_data], json_file, indent=4)
 
                 faq_collection = CollectionUploadChecker(FAQ_COLLECTION_NAME,
                                                          json_filename)
                 vectors = faq_collection.check_collection_upload_data()
-                
                 destination_filename = FAQ_LOC
 
                 if not os.path.exists(destination_filename):
@@ -114,11 +124,52 @@ def handle_ingestion():
                     json.dump(destination_data, destination_file, indent=4)
                 os.remove(json_filename)
                 
-                if vectors is not None:
+                if vectors :
                     response_data = {"message": f"Data ingested successfully with collection: {FAQ_COLLECTION_NAME}"}
                     return jsonify(response_data)
                 else:
                     response_data = {"message": f"Data ingestion failed with collection: {FAQ_COLLECTION_NAME}"}
+                    return jsonify(response_data)
+
+            elif request.method == 'PUT':
+
+                json_data = request.json
+                faq_data = "temp_faq_datastore"
+                
+                if not os.path.exists(faq_data):
+                    os.makedirs(faq_data)
+                
+                json_filename = os.path.join(faq_data, "data.json")
+                with open(json_filename, 'w') as json_file:
+                    json.dump([json_data], json_file, indent=4)
+
+                faq_collection = CollectionUploadChecker(FAQ_COLLECTION_NAME,
+                                                         json_filename)
+                vectors = faq_collection.check_collection_upload_data()
+                destination_filename = FAQ_LOC
+
+                if not os.path.exists(destination_filename):
+                    with open(destination_filename, 'w') as new_file:
+                        json.dump({}, new_file)
+
+                with open(json_filename, 'r') as json_file:
+                    source_data = json.load(json_file)
+    
+                with open(destination_filename, 'r') as destination_file:
+                    destination_data = json.load(destination_file)
+
+                for item in source_data:
+                    destination_data.append(item)
+
+                with open(destination_filename, 'w') as destination_file:
+                    json.dump(destination_data, destination_file, indent=4)
+                os.remove(json_filename)
+                
+                if vectors :
+                    response_data = {"message": f"Data updated successfully with collection: {FAQ_COLLECTION_NAME}"}
+                    return jsonify(response_data)
+                else:
+                    response_data = {"message": f"Data update failed with collection: {FAQ_COLLECTION_NAME}"}
                     return jsonify(response_data)
                 
             elif request.method == 'DELETE':
@@ -128,7 +179,7 @@ def handle_ingestion():
                 delete_operation = SemanticSearch()
                 delete_data = delete_operation.delete_qan(id)
                 
-                if delete_data is not None:
+                if delete_data:
                     response_data = {"message" : "Data deleted successfully"}
                     return jsonify(response_data)
                 
@@ -346,10 +397,15 @@ def scrape():
                 full_url = WAVEMAKER_WEBSITE + '/' + filename
                 delete_duplicates = DeleteDuplicates(full_url, COLLECTION_NAME)
                 all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(COLLECTION_NAME)
+
                 result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)
+
                 deleted_data = delete_duplicates.delete_vector(result_id)
+
+                if os.path.exists(full_url):
+                    os.remove(full_url)
                 
-                if deleted_data is not None:
+                if deleted_data :
                     success_flag = True
                     logging.info("Website data deleted successfully")
 

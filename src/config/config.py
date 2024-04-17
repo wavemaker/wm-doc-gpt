@@ -17,7 +17,7 @@ HOSTNAME = 'qdrant'
 COLLECTION_NAME = "WAVE"
 QUDRANT_URL = f"http://qdrant:6333"
 PERSIST_DIRECTORY = ""
-FAQ_COLLECTION_NAME = "FAQ"
+FAQ_COLLECTION_NAME = "FAQTEST"
 QDRANT_API_KEY = os.getenv("QDRANT__SERVICE__API_KEY")
 
 CUSTOM_QDRANT_CLIENT = QdrantClient(HOSTNAME, 
@@ -32,7 +32,7 @@ REDIS_URL = f"redis://redis:6379"
 #==== LLM ====#
 MODEL = 'gpt-4-turbo-preview'
 TEMPERATURE = 0
-EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
+EMBEDDING_MODEL = 'all-mpnet-base-v2'
 
 #==== System Message ====#
 SYSTEM_MSG = """
