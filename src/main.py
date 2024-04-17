@@ -32,13 +32,16 @@ from src.config.config import (
 )
 
 app = Flask(__name__)
+app.config['SESSION_COOKIE_SECURE'] = True
 
 app.secret_key = os.environ["SECRET_KEY"]
+
 app.permanent_session_lifetime = timedelta(minutes=5)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
     
+    logging.info(f"session{session}")
     if 'user_id' not in session:
         print("session",session)
         user_id = str(uuid.uuid4())
