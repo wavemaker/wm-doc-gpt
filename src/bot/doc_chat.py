@@ -188,13 +188,13 @@ class ChatAssistant:
         unique_sources_with_link = list(set(sources_with_link))
 
         if question:
-            answer = str(with_message_history.invoke(
+            answer = with_message_history.invoke(
                     {"question": question},
                     config={"configurable": {"session_id": session_id}},
-                    ))
+                    )
                         
-            if answer.startswith("content="):
-                content_without_quotes = answer.replace("content=", "")
+            # if answer.startswith("content="):
+            #     content_without_quotes = answer.replace("content=", "")
                 
             history.add_user_message(question)
             history.add_ai_message(answer)
@@ -204,7 +204,7 @@ class ChatAssistant:
                 output_string = answer[:index].strip()
                 return jsonify({'ragAnswer': output_string})
             else:
-                return jsonify({'ragAnswer': content_without_quotes, 
+                return jsonify({'ragAnswer': answer.content, 
                             'sources':unique_sources_with_link})
         else:
             return "Ask me anything about wavemaker!"
