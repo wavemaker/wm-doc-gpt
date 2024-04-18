@@ -346,6 +346,10 @@ def scrape():
                     try:
                         read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
                         stored_vector = read_docs.prepare_and_save_scrapped_data()
+
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                            
                         if stored_vector is not None:
                             success_flag = True
                         else:
@@ -359,6 +363,9 @@ def scrape():
                         delete_duplicates.delete_vector(result_id)
                         read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
                         stored_vector = read_docs.prepare_and_save_scrapped_data()
+
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
 
                         if stored_vector is not None:
                             success_flag = True
