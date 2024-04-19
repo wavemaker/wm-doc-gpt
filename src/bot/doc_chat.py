@@ -39,7 +39,7 @@ class ChatAssistant:
         llm = ChatOpenAI(
                         model_name=MODEL, 
                         temperature=TEMPERATURE,
-                        max_tokens = 200
+                        max_tokens = 500
                          )
         
         db = Qdrant(
@@ -120,7 +120,8 @@ class ChatAssistant:
     @staticmethod
     def answer_question(session_id, question,url):
         history = RedisChatMessageHistory(session_id, 
-                                          url=url)
+                                          url=url,
+                                           ttl=180)
         with_message_history = ChatAssistant.rag(session_id, 
                                                  question,url)
         docs = ChatAssistant.ensemble_retriever.invoke(question)

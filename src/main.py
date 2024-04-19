@@ -33,16 +33,17 @@ from src.config.config import (
 app = Flask(__name__)
 
 app.secret_key = os.environ["SECRET_KEY"]
-app.permanent_session_lifetime = timedelta(hours=1)
+app.permanent_session_lifetime = timedelta(minutes=5)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
     
+    logging.info("session:",session)
     if 'user_id' not in session:
-        print("session",session)
+        
         user_id = str(uuid.uuid4())
         session['user_id'] = user_id
-    
+        logging.info("session created:",session)
     else:
         user_id = session['user_id']
     
