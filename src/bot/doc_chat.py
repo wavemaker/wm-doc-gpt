@@ -39,7 +39,7 @@ class ChatAssistant:
         llm = ChatOpenAI(
                         model_name=MODEL, 
                         temperature=TEMPERATURE,
-                        max_tokens = 200
+                        max_tokens = 500
                          )
         
         db = Qdrant(
