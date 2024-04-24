@@ -41,14 +41,17 @@ app.permanent_session_lifetime = timedelta(minutes=5)
 def answer_question():
     
     logging.info(f"session{session}")
-    if 'user_id' not in session:
-        print("session",session)
-        user_id = str(uuid.uuid4())
-        session['user_id'] = user_id
+    # if 'user_id' not in session:
+    #     print("session",session)
+    #     user_id = str(uuid.uuid4())
+    #     session['user_id'] = user_id
     
-    else:
-        user_id = session['user_id']
+    # else:
+    #     user_id = session['user_id']
+    user_id = request.cookies.get('SESSION')
     
+    logging.info("user_id",user_id)
+
     data = request.json
     question = data.get('question')
 
