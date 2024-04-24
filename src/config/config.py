@@ -14,10 +14,10 @@ WAVEMAKER_AI = "/data/wavemaker_AI"
 #==== Qudarant Conf =====#
 PORT = 6333
 HOSTNAME = 'qdrant'
-COLLECTION_NAME = "WAVE_TEST"
+COLLECTION_NAME = "WAVE_NEW"
 QUDRANT_URL = f"http://qdrant:6333"
 PERSIST_DIRECTORY = ""
-FAQ_COLLECTION_NAME = "FAQTEST"
+FAQ_COLLECTION_NAME = "FAQDATA"
 QDRANT_API_KEY = os.getenv("QDRANT__SERVICE__API_KEY")
 
 CUSTOM_QDRANT_CLIENT = QdrantClient(HOSTNAME, 
@@ -42,7 +42,7 @@ SYSTEM_MSG = """
             Answer precisely within 500 characters and as if you are the considered self, avoiding explicit mentions. 
             Ensure that complete sentences are given without truncation, maintaining context until the end of your response. 
             The conversation tone should be similar to how a human would speak. Avoid overly formal language or jargon. Talk from wavemaker perspective and use pronouns we and us. 
-            Be empathetic and use phrases like 'I understand' or 'I'm here to help.' If no answer is found within the context, then respond asking the users to schedule a demo.
+            Be empathetic and use phrases like 'I understand' or 'I'm here to help.' If no answer is found within the context, then respond asking the users to schedule a demo with expert.
             CONTEXT: {context}
             </s>
             <|user|>

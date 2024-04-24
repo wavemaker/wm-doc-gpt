@@ -32,7 +32,6 @@ from src.config.config import (
 )
 
 app = Flask(__name__)
-app.config['SESSION_COOKIE_SECURE'] = True
 
 app.secret_key = os.environ["SECRET_KEY"]
 
@@ -257,9 +256,6 @@ def scrape():
         return jsonify({"error": "No URL or CSV file provided"}), 400
 
     #======Store the scraped files in the s3============#
-    if not os.path.exists(UPLOAD_SCRAPPED_DATA):
-        os.makedirs(UPLOAD_SCRAPPED_DATA)
-
     folder_path = os.path.join(os.getcwd(), UPLOAD_SCRAPPED_DATA) 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -283,18 +279,21 @@ def scrape():
                     file.write(parsed_html.cleaned_text)
 
                 read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
-                stored_vector = read_docs.prepare_and_save_scrapped_data()
+                stored_vector = read_docs.prepare_and_save_scrapped_data(url)
 
                 if stored_vector:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
 
                     wavemaker_file_path = os.path.join(WAVEMAKER_WEBSITE, filename)
-                    
+                    scrapped_data_path = os.path.join(UPLOAD_SCRAPPED_DATA, filename)
+
                     if os.path.exists(wavemaker_file_path):
                         os.remove(wavemaker_file_path)
+                    
                     with open(wavemaker_file_path, 'w') as file:
                         file.write(parsed_html.cleaned_text)
+                    
+                    if os.path.exists(scrapped_data_path):
+                        os.remove(scrapped_data_path)
 
                     success_flag = True
 
@@ -338,14 +337,15 @@ def scrape():
                     file.write(parsed_html.cleaned_text)
                 
                 full_url = WAVEMAKER_WEBSITE + '/' + filename
-                delete_duplicates = DeleteDuplicates(full_url, COLLECTION_NAME)
+
+                delete_duplicates = DeleteDuplicates(url, COLLECTION_NAME)
                 all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(collection_name=COLLECTION_NAME)
                 result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)
 
                 if result_id is None:
                     try:
                         read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
-                        stored_vector = read_docs.prepare_and_save_scrapped_data()
+                        stored_vector = read_docs.prepare_and_save_scrapped_data(url)
 
                         if os.path.exists(file_path):
                             os.remove(file_path)
@@ -362,7 +362,7 @@ def scrape():
                     try:
                         delete_duplicates.delete_vector(result_id)
                         read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
-                        stored_vector = read_docs.prepare_and_save_scrapped_data()
+                        stored_vector = read_docs.prepare_and_save_scrapped_data(url)
 
                         if os.path.exists(file_path):
                             os.remove(file_path)
@@ -405,7 +405,8 @@ def scrape():
                     os.remove(wavemaker_file_path)
                 
                 full_url = WAVEMAKER_WEBSITE + '/' + filename
-                delete_duplicates = DeleteDuplicates(full_url, COLLECTION_NAME)
+
+                delete_duplicates = DeleteDuplicates(url, COLLECTION_NAME)
                 all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(COLLECTION_NAME)
 
                 result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)

@@ -190,7 +190,7 @@ class PrepareAndSaveScrappedData():
             logging.error(f"An error occurred in check_and_create_collection: {str(e)}")
 
 
-    def prepare_and_save_scrapped_data(self):
+    def prepare_and_save_scrapped_data(self,URL):
         try:
             self.load_scrapped_data()
 
@@ -210,8 +210,8 @@ class PrepareAndSaveScrappedData():
             for document in scrapped_data_chunks:
                 content_list.append( document.page_content)
                 base_filename = os.path.basename(document.metadata["source"])
-                full_source_path = os.path.join(WAVEMAKER_WEBSITE, base_filename)
-                source_list.append({"source": full_source_path})
+                # full_source_path = os.path.join(WAVEMAKER_WEBSITE, base_filename)
+                source_list.append({"source": URL})
 
             self.check_and_create_collection(COLLECTION_NAME)
             qdrant_scraper_client.add_texts(content_list, source_list)
