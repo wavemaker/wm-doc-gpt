@@ -33,14 +33,14 @@ from src.config.config import (
 
 app = Flask(__name__)
 
-app.secret_key = os.environ["SECRET_KEY"]
+# app.secret_key = os.environ["SECRET_KEY"]
 
-app.permanent_session_lifetime = timedelta(minutes=5)
+# app.permanent_session_lifetime = timedelta(minutes=5)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
     
-    logging.info(f"session{session}")
+    # logging.info(f"session{session}")
     # if 'user_id' not in session:
     #     print("session",session)
     #     user_id = str(uuid.uuid4())
@@ -48,7 +48,12 @@ def answer_question():
     
     # else:
     #     user_id = session['user_id']
-    user_id = request.cookies.get('SESSION')
+    # user_id = request.cookies.get('Uuid')
+
+    headers = dict(request.headers)
+    logging.info("request_headers",headers)
+
+    user_id = request.headers.get('Uuid')
     
     logging.info("user_id",user_id)
 
@@ -61,7 +66,7 @@ def answer_question():
                                       url=REDIS_URL)
 
     for hit in sim_results:
-        if hit.score < 0.80:
+        if hit.score < 0.85:
             logging.info("Rag flow initilised for the query")
             assistant = ChatAssistant()
             answer = assistant.answer_question(user_id, question,REDIS_URL)
