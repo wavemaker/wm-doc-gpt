@@ -8,8 +8,8 @@ DATA_LOC = "/data/"
 
 FAQ_LOC = "/data/faq/output.json"
 GITHUB_DOCS = "/data/docs"
-WAVEMAKER_WEBSITE = "/data/wavemaker_website"
-WAVEMAKER_AI = "/data/wavemaker_AI"
+WAVEMAKER_WEBSITE = "/data/wavemaker_AI"
+# WAVEMAKER_AI = "/data/wavemaker_AI"
 
 #==== Qudarant Conf =====#
 PORT = 6333
