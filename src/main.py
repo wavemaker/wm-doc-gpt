@@ -34,10 +34,9 @@ from src.config.config import (
 
 app = Flask(__name__)
 
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
-#os.environ["SECRET_KEY"]
+# app.secret_key = os.environ["SECRET_KEY"]
 
-app.permanent_session_lifetime = timedelta(minutes=5)
+# app.permanent_session_lifetime = timedelta(minutes=5)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
