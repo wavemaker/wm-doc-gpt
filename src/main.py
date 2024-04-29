@@ -18,6 +18,7 @@ from src.helper.prepare_db import DeleteDuplicates
 from src.helper.prepare_db import PrepareAndSaveScrappedData
 from src.helper.prepare_db import SemanticSearch
 from src.helper.scrapper import ScrapePDFAndSave
+from src.helper.semantic_router import query_route
 from src.config.config import (
         COLLECTION_NAME, 
         # DATA_LOC,
@@ -50,6 +51,14 @@ def answer_question():
 
     data = request.json
     question = data.get('question')
+
+    intent = query_route(question)
+
+    if intent == "Greet":
+        greeting = "Hello! How can I help you today? If you have any questions or need assistance related to WaveMaker, please feel free to ask. I'm here to provide information and support about WaveMaker and its features."
+        return jsonify({
+            "ragAnswer":greeting
+            })
 
     logging.info("Query searching in the FAQ collection is started")
     sim_results = search(question)
