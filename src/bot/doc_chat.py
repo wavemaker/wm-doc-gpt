@@ -204,7 +204,7 @@ class ChatAssistant:
                 question_type = data["Question_type"]
                     
                 if question_type == "Aboutperson":
-                    return jsonify({"ragAnswer": "He is the part of wavemaker"})
+                    return jsonify({"ragAnswer": "For information about the people working at WaveMaker please checkout our website."})
                 
                 elif question_type == "Outofwavemaker":
                     return jsonify({"ragAnswer": "I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, feel free to ask. How can I assist you today?"})
