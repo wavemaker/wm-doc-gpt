@@ -41,7 +41,6 @@ app = Flask(__name__)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
-
     headers = dict(request.headers)
     logging.info("request_headers",headers)
 
@@ -273,18 +272,22 @@ def scrape():
             success_flag = False
             
             for url in urls:
+                logging.info("inside the pdf")
                 if url.endswith(".pdf"):
                     try:
+                        logging.info("url",url)
                         converter = ScrapePDFAndSave(url)
                         success, pdf_text, pdf_filename = converter.read_pdf_from_web()
 
                         parsed_url = urlparse(url)
                         filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
+                        logging.info("filename",filename)
                         file_path = os.path.join(folder_path, filename)
 
                         with open(file_path, 'w') as file:
                             file.write(pdf_text)
                         
+                        logging.info("url",url)
                         read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
                         stored_vector = read_docs.prepare_and_save_scrapped_data(url)
 
