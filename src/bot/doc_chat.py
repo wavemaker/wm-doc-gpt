@@ -157,12 +157,12 @@ class ChatAssistant:
             #     filename = "https://" + filename
             #     return filename
 
-            elif "wavemaker_website" in file_path and "wp-content-uploads" in file_path:
-                file_path_without_extension = file_path.replace('.md', '')
-                filename = file_path_without_extension.split('/')[-1] 
-                filename = filename.replace("-", "/")
-                filename = "https://" + filename  
-                return filename
+            # elif "wavemaker_website" in file_path and "wp-content-uploads" in file_path:
+            #     file_path_without_extension = file_path.replace('.md', '')
+            #     filename = file_path_without_extension.split('/')[-1] 
+            #     filename = filename.replace("-", "/")
+            #     filename = "https://" + filename  
+            #     return filename
 
             # elif 'wavemaker_website' in file_path:
             #     file_path_without_extension = file_path.replace('.md', '')
