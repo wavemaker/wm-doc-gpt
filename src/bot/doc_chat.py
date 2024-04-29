@@ -9,6 +9,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from src.helper.prepare_db import PrepareVectorDB
+import json
 from flask import jsonify
 from src.config.config import( 
                     DATA_LOC, 
@@ -163,19 +164,19 @@ class ChatAssistant:
                 filename = "https://" + filename  
                 return filename
 
-            elif 'wavemaker_website' in file_path:
-                file_path_without_extension = file_path.replace('.md', '')
+            # elif 'wavemaker_website' in file_path:
+            #     file_path_without_extension = file_path.replace('.md', '')
                 
-                website_url = 'https://www.wavemaker.com'
-                url = website_url + file_path_without_extension.split('/wavemaker_website')[1]
-                return url
+            #     website_url = 'https://www.wavemaker.com'
+            #     url = website_url + file_path_without_extension.split('/wavemaker_website')[1]
+            #     return url
             
-            elif "wavemaker_AI" in file_path:
-                file_path_without_extension = file_path.replace('.md', '')
+            # elif "wavemaker_AI" in file_path:
+            #     file_path_without_extension = file_path.replace('.md', '')
 
-                websiteAI_url = 'https://wavemaker.ai'
-                waveai_url = websiteAI_url + file_path_without_extension.split('/wavemaker_AI')[1]
-                return waveai_url
+            #     websiteAI_url = 'https://wavemaker.ai'
+            #     waveai_url = websiteAI_url + file_path_without_extension.split('/wavemaker_AI')[1]
+            #     return waveai_url
             else:
                 file_path_without_extension = file_path.replace('.md', '')
                 return file_path_without_extension
@@ -192,19 +193,22 @@ class ChatAssistant:
                     {"question": question},
                     config={"configurable": {"session_id": session_id}},
                     )
-                        
-            # if answer.startswith("content="):
-            #     content_without_quotes = answer.replace("content=", "")
-                
+                                        
             history.add_user_message(question)
             history.add_ai_message(answer)
             
-            if "Question type:" in answer:
-                index = answer.find("Question type:")
-                output_string = answer[:index].strip()
-                return jsonify({'ragAnswer': output_string})
+            result = answer.content
+            
+            if "Question_type" in result:
+                data = json.loads(result)
+                question_type = data["Question_type"]
+                    
+                if question_type == "Aboutperson":
+                    return jsonify({"ragAnswer": "He is the part of wavemaker"})
+                
+                elif question_type == "Outofwavemaker":
+                    return jsonify({"ragAnswer": "I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, feel free to ask. How can I assist you today?"})
+
             else:
-                return jsonify({'ragAnswer': answer.content, 
-                            'sources':unique_sources_with_link})
-        else:
-            return "Ask me anything about wavemaker!"
+                return jsonify({"ragAnswer": result, 
+                                "sources":unique_sources_with_link})

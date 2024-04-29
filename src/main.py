@@ -17,6 +17,7 @@ from src.bot.doc_chat import ChatAssistant
 from src.helper.prepare_db import DeleteDuplicates
 from src.helper.prepare_db import PrepareAndSaveScrappedData
 from src.helper.prepare_db import SemanticSearch
+from src.helper.scrapper import ScrapePDFAndSave
 from src.config.config import (
         COLLECTION_NAME, 
         # DATA_LOC,
@@ -33,22 +34,13 @@ from src.config.config import (
 
 app = Flask(__name__)
 
-# app.secret_key = os.environ["SECRET_KEY"]
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+#os.environ["SECRET_KEY"]
 
-# app.permanent_session_lifetime = timedelta(minutes=5)
+app.permanent_session_lifetime = timedelta(minutes=5)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
-    
-    # logging.info(f"session{session}")
-    # if 'user_id' not in session:
-    #     print("session",session)
-    #     user_id = str(uuid.uuid4())
-    #     session['user_id'] = user_id
-    
-    # else:
-    #     user_id = session['user_id']
-    # user_id = request.cookies.get('Uuid')
 
     headers = dict(request.headers)
     logging.info("request_headers",headers)
@@ -273,37 +265,76 @@ def scrape():
             success_flag = False
             
             for url in urls:
-                parsed_html, error = Scraper.scrape_website(url)
+                if url.endswith(".pdf"):
+                    try:
+                        converter = ScrapePDFAndSave(url)
+                        success, pdf_text, pdf_filename = converter.read_pdf_from_web()
+
+                        parsed_url = urlparse(url)
+                        filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
+                        file_path = os.path.join(folder_path, filename)
+
+                        with open(file_path, 'w') as file:
+                            file.write(pdf_text)
+                        
+                        read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
+                        stored_vector = read_docs.prepare_and_save_scrapped_data(url)
+
+                        if stored_vector:
+                            wavemaker_file_path = os.path.join(WAVEMAKER_WEBSITE, filename)
+                            scrapped_data_path = os.path.join(UPLOAD_SCRAPPED_DATA, filename)
+
+                            if os.path.exists(wavemaker_file_path):
+                                os.remove(wavemaker_file_path)
+                            
+                            with open(wavemaker_file_path, 'w') as file:
+                                file.write(pdf_text)
+                            
+                            success_flag = True
+                        
+
+                        if os.path.exists(scrapped_data_path):
+                            os.remove(scrapped_data_path)
+
+                        # Set the flag to True if the process was successful for at least one URL
+                        success_flag = True
+                        
+                    except Exception as e:
+                        logging.error(f"PDF conversion failed {e}")
+                        return("An error occurred:", e)
+
+                else :
+                    parsed_html, error = Scraper.scrape_website(url)
                 
-                if error:
-                    logging.error(f"Error scraping website data: {error}")
-                    continue
-
-                parsed_url = urlparse(url)
-                filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
-                file_path = os.path.join(folder_path, filename)
-
-                with open(file_path, 'w') as file:
-                    file.write(parsed_html.cleaned_text)
-
-                read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
-                stored_vector = read_docs.prepare_and_save_scrapped_data(url)
-
-                if stored_vector:
-
-                    wavemaker_file_path = os.path.join(WAVEMAKER_WEBSITE, filename)
-                    scrapped_data_path = os.path.join(UPLOAD_SCRAPPED_DATA, filename)
-
-                    if os.path.exists(wavemaker_file_path):
-                        os.remove(wavemaker_file_path)
+                    if error:
+                        return jsonify({"error": str(error)}), 500
                     
-                    with open(wavemaker_file_path, 'w') as file:
+                    parsed_url = urlparse(url)
+                    filename = parsed_url.path.strip('/').replace('/', '-') + ".md"
+                    file_path = os.path.join(folder_path, filename)
+
+                    with open(file_path, 'w') as file:
                         file.write(parsed_html.cleaned_text)
                     
-                    if os.path.exists(scrapped_data_path):
-                        os.remove(scrapped_data_path)
+                
+                    read_docs = PrepareAndSaveScrappedData(UPLOAD_SCRAPPED_DATA)
+                    stored_vector = read_docs.prepare_and_save_scrapped_data(url)
 
-                    success_flag = True
+                    if stored_vector:
+                        wavemaker_file_path = os.path.join(WAVEMAKER_WEBSITE, filename)
+                        scrapped_data_path = os.path.join(UPLOAD_SCRAPPED_DATA, filename)
+                        
+                        if os.path.exists(wavemaker_file_path):
+                            os.remove(wavemaker_file_path)
+                        with open(wavemaker_file_path, 'w') as file:
+                            file.write(parsed_html.cleaned_text)
+                        
+
+                        if os.path.exists(scrapped_data_path):
+                            os.remove(scrapped_data_path)
+
+                        # Set the flag to True if the process was successful for at least one URL
+                        success_flag = True
 
             if success_flag:
                 response_data = {"message": f"Website data ingested successfully with collection: {COLLECTION_NAME}"}
@@ -416,10 +447,11 @@ def scrape():
 
                 delete_duplicates = DeleteDuplicates(url, COLLECTION_NAME)
                 all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(COLLECTION_NAME)
-
+                print("all_data:",all_data)
                 result_id = delete_duplicates.get_id_from_source(all_data, delete_duplicates.url)
-
+                print("result_id:",result_id)
                 deleted_data = delete_duplicates.delete_vector(result_id)
+                print("deleted_data:",deleted_data)
 
                 if os.path.exists(full_url):
                     os.remove(full_url)
