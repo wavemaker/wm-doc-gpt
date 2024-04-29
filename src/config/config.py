@@ -14,7 +14,7 @@ WAVEMAKER_AI = "/data/wavemaker_AI"
 #==== Qudarant Conf =====#
 PORT = 6333
 HOSTNAME = 'qdrant'
-COLLECTION_NAME = "WAVETEST"
+COLLECTION_NAME = "WAVE"
 QUDRANT_URL = f"http://qdrant:6333"
 PERSIST_DIRECTORY = ""
 FAQ_COLLECTION_NAME = "FAQDATA"
