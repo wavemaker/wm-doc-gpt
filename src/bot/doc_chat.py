@@ -64,11 +64,12 @@ class ChatAssistant:
                         retrievers=[vectorstore_retriever, 
                                     ChatAssistant.keyword_retriever
                                     ],
-                                    weights=[0.5, 0.5],
+                                    weights=[0.6, 0.4],
                                     return_source_documents=True
                         )
 
         ChatAssistant.ensemble_retriever = ensemble_retriever
+        ChatAssistant.vectorstore_retriever = vectorstore_retriever
 
         qa_prompt = ChatPromptTemplate.from_messages(
             [
@@ -125,7 +126,9 @@ class ChatAssistant:
                                           ttl=180)
         with_message_history = ChatAssistant.rag(session_id, 
                                                  question,url)
-        docs = ChatAssistant.ensemble_retriever.invoke(question)
+        ##Sources
+        # docs = ChatAssistant.ensemble_retriever.invoke(question)
+        docs = ChatAssistant.vectorstore_retriever.invoke(question)
         
         # print(docs)
         # sources = [doc.metadata['source'] for doc in docs]
