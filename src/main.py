@@ -53,11 +53,25 @@ def answer_question():
 
     intent = query_route(question)
 
-    if intent == "Greet":
-        greeting = "Hello! How can I help you today? If you have any questions or need assistance related to WaveMaker, please feel free to ask. I'm here to provide information and support about WaveMaker and its features."
-        return jsonify({
-            "ragAnswer":greeting
-            })
+    response_template = {
+    "response_from": "ROUTER",
+    "faq_id": "",
+    "question": "",
+    "answer":"",
+    "sources": "",
+    "intent": ""
+    }
+
+    if intent == "Greeting":
+        response_template["answer"] = "Hello! How can I help you today? If you have any questions or need assistance related to WaveMaker, please feel free to ask. I'm here to provide information and support about WaveMaker and its features.",
+        response_template["intent"] = intent
+        return jsonify(response_template)
+    
+    elif intent == "Demo":
+        response_template["intent"] = intent
+        return jsonify(response_template)
+
+
 
     logging.info("Query searching in the FAQ collection is started")
     sim_results = search(question)
@@ -75,9 +89,13 @@ def answer_question():
             curatedAns = sim_results[0].payload['answer']
             history.add_user_message(question)
             history.add_ai_message(curatedAns)
-            return jsonify({'Id':sim_results[0].id,
+            return jsonify({
+                            "response_from":"FAQ",
+                            "faq_id":sim_results[0].id,
                             'question':sim_results[0].payload['question'], 
-                            'answer': sim_results[0].payload['answer']})
+                            'answer': sim_results[0].payload['answer'],
+                            "sources": "",
+                            "intent": ""})
 
 @app.route('/ingest', methods=['POST', 'PUT', 'DELETE'])
 def handle_ingestion():

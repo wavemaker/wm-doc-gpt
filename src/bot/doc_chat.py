@@ -200,18 +200,66 @@ class ChatAssistant:
             history.add_user_message(question)
             history.add_ai_message(answer)
             
-            result = answer.content
+            # result = answer.content
             
-            if "Question_type" in result:
-                data = json.loads(result)
-                question_type = data["Question_type"]
+            # if "Question_type" in result:
+            #     data = json.loads(result)
+            #     question_type = data["Question_type"]
                     
-                if question_type == "Aboutperson":
-                    return jsonify({"ragAnswer": "For information about the people working at WaveMaker please checkout our website."})
+            #     if question_type == "Aboutperson":
+            #         return jsonify({"ragAnswer": "For information about the people working at WaveMaker, please check out our website."})
                 
-                elif question_type == "Outofwavemaker":
-                    return jsonify({"ragAnswer": "I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, feel free to ask. How can I assist you today?"})
+            #     elif question_type == "Outofwavemaker":
+            #         return jsonify({"ragAnswer": "I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, feel free to ask. How can I assist you today?"})
 
+            # else:
+            #     return jsonify({"ragAnswer": result, 
+            #                     "sources":unique_sources_with_link})
+
+            response_templates = {
+                "Block_msg": {
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": "",
+                    "sources": "",
+                    "intent": "Block_message"
+                },
+                "Demo": {
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": "",
+                    "sources": "",
+                    "intent": "Demo"
+                },
+                "Aboutpersoninfo": {
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": "For information about the people working at WaveMaker, please check out our website.",
+                    "sources": "",
+                    "intent": ""
+                },
+                "Outofwavemaker": {
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": "I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, feel free to ask. How can I assist you today?",
+                    "sources": "",
+                    "intent": "Outofwavemaker"
+                }
+            }
+
+            answer_content = answer.content
+            if answer_content in response_templates:
+                return jsonify(response_templates[answer_content])
             else:
-                return jsonify({"ragAnswer": result, 
-                                "sources":unique_sources_with_link})
+                return jsonify({
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": answer_content,
+                    "sources": unique_sources_with_link,
+                    "intent": ""
+                })
