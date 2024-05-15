@@ -8,6 +8,19 @@ encoder = HuggingFaceEncoder(name="sentence-transformers/all-mpnet-base-v2")
 
 # encoder = OpenAIEncoder()
 
+Ragpipe = Route(
+    name="Ragpipe",
+    utterances=[
+        "What is wavemaker,please schdule demo?",
+        "How to create vatiable so please schedule demo to understand the more about how to create the variable?",
+        "Who is the CEO and how can i contact to your team?",
+        "Schedule demo and i want to know how ai being used in the wavemaker?",
+        " what is wm and i want schedule demo?",
+        "what is wm and how to contact to your team",
+        "How to see the logs in the wavemaker or how may connect with your team to understand more?"
+    ],
+)
+
 Greeting = Route(
     name="Greeting",
     utterances=[
@@ -23,7 +36,6 @@ Greeting = Route(
         "Hey pooch",
         "Hi pooch",
         "Hello pooch",
-        "pooch",
         "who are you?"
     ],
 )
@@ -55,7 +67,27 @@ Demo = Route(
     "When can we arrange a meeting to talk about the product?",
 ],
 )
-routes = [Greeting, Demo]
+
+Contact_us = Route(
+    name="Contact_us",
+    utterances=[
+        "How can I get in touch with your team?",
+        "What are the contact details to reach out?",
+        "I'd like to contact your team. How can I do that?",
+        "Is there a way to reach out to your team?",
+        "How do I connect with your support team?",
+        "What's the best way to contact you?",
+        "Can you provide me with the contact information?",
+        "I need to reach someone from your team. How can I do that?",
+        "What are the options for contacting your team?",
+        "How do I reach out for assistance?",
+        "Could you please provide me with the contact details?",
+        "Is there a contact form or email I can use?",
+        "I'm interested in contacting your team. What's the process?",
+        "How do I reach customer support?",
+        "How can I reach out for further assistance?",    ],
+)
+routes = [Ragpipe, Greeting, Demo, Contact_us]
 
 
 def query_route(query):

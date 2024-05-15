@@ -73,6 +73,14 @@ def answer_question():
         response_template["answer"] = "Thank you for your interest in scheduling a demo with us. Kindly provide the following details, and our expert will promptly reach out to you. We are eager to demonstrate how our platform can fulfill your requirements."
         response_template["intent"] = intent
         return jsonify(response_template)
+    
+    elif intent == "Contact_us":
+        response_template["answer"] = "Thank you for reaching out to us. Please provide the following details, and our team will get back to you shortly. We're here to assist you and answer any questions you may have."
+        response_template["intent"] = intent
+        return jsonify(response_template)
+    
+    elif intent == "Ragpipe":
+        pass
 
 
 
