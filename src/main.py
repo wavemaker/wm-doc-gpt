@@ -65,7 +65,7 @@ def answer_question():
     }
 
     if intent == "Greeting":
-        response_template["answer"] = "Hello! How can I help you today? If you have any questions or need assistance related to WaveMaker, please feel free to ask. I'm here to provide information and support about WaveMaker and its features."
+        response_template["answer"] = "Hello, I'm Pooch! How can I assist you today? If you have any questions or need assistance related to WaveMaker, feel free to ask. I'm here to provide information and support regarding WaveMaker and its features."
         response_template["intent"] = intent
         return jsonify(response_template)
     
