@@ -47,7 +47,6 @@ Demo = Route(
     "demo, please?",
     "please schedule a demo?",
     "schedule demo?",
-    "schedule demo",
     "How can i contact your team?",
     "Let's arrange a session to explore the product.",
     "Could we schedule a meeting to discuss the product?",
