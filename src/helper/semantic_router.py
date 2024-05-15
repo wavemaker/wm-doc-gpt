@@ -43,6 +43,10 @@ Greeting = Route(
 Demo = Route(
     name="Demo",
     utterances = [
+    "demo?",
+    "demo, please?",
+    "please schedule a demo?",
+    "schedule demo?",
     "schedule demo",
     "How can i contact your team?",
     "Let's arrange a session to explore the product.",
