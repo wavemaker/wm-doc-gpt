@@ -19,6 +19,7 @@ Greeting = Route(
         "Hey there?",
         "Hello there?",
         "Hi there?",
+        "yo"
     ],
 )
 

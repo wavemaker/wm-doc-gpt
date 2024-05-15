@@ -254,7 +254,7 @@ class SemanticSearch:
             points = [
                 models.PointStruct(
                     id=doc["id"],
-                    vector=self.encoder.encode(doc["question"]).tolist(),
+                    vector=self.encoder.encode(doc["question"].rstrip('?')).tolist(),
                     payload=doc
                 ) for doc in faqdata
             ]

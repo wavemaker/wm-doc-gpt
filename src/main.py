@@ -50,6 +50,8 @@ def answer_question():
 
     data = request.json
     question = data.get('question')
+    if question.endswith('?'):
+        question = question.rstrip('?')
 
     intent = query_route(question)
 
@@ -68,6 +70,7 @@ def answer_question():
         return jsonify(response_template)
     
     elif intent == "Demo":
+        response_template["answer"] = "Thank you for your interest in scheduling a demo with us. Kindly provide the following details, and our expert will promptly reach out to you. We are eager to demonstrate how our platform can fulfill your requirements."
         response_template["intent"] = intent
         return jsonify(response_template)
 

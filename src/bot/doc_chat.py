@@ -221,7 +221,7 @@ class ChatAssistant:
                     "response_from": "RAG",
                     "faq_id": "",
                     "question": "",
-                    "answer": "",
+                    "answer": "Schedule a demo with us so we can address your questions. Thank you.",
                     "sources": "",
                     "intent": "Block_message"
                 },
@@ -229,7 +229,7 @@ class ChatAssistant:
                     "response_from": "RAG",
                     "faq_id": "",
                     "question": "",
-                    "answer": "",
+                    "answer": "Thank you for your interest in scheduling a demo with us. Kindly provide the following details, and our expert will promptly reach out to you. We are eager to demonstrate how our platform can fulfill your requirements.",
                     "sources": "",
                     "intent": "Demo"
                 },
@@ -245,15 +245,36 @@ class ChatAssistant:
                     "response_from": "RAG",
                     "faq_id": "",
                     "question": "",
-                    "answer": "I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, feel free to ask. How can I assist you today?",
+                    "answer": "Sorry, I'm here to provide information about WaveMaker. If you have any questions or need assistance with our platform, go ahead and ask me.",
                     "sources": "",
                     "intent": "Outofwavemaker"
                 }
             }
 
             answer_content = answer.content
-            if answer_content in response_templates:
+            
+            if "demo" in answer_content:
+                return jsonify({
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": answer_content,
+                    "sources": unique_sources_with_link,
+                    "intent": "Demo"
+                })
+            elif "contact us" in answer_content or "reach out" in answer_content:
+                return jsonify({
+                    "response_from": "RAG",
+                    "faq_id": "",
+                    "question": "",
+                    "answer": answer_content,
+                    "sources": unique_sources_with_link,
+                    "intent": "Contact_us"
+                })
+                
+            elif answer_content in response_templates:
                 return jsonify(response_templates[answer_content])
+            
             else:
                 return jsonify({
                     "response_from": "RAG",
