@@ -5,4 +5,5 @@ RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://
 COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt 
 COPY . /app/
-ENTRYPOINT ["/usr/local/bin/python", "run.py"]
+#ENTRYPOINT ["/usr/local/bin/python", "run.py"]
+ENTRYPOINT ["gunicorn", "--config", "gunicorn_config.py", "run:app"]

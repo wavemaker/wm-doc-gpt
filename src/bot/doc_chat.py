@@ -262,7 +262,7 @@ class ChatAssistant:
                     "sources": unique_sources_with_link,
                     "intent": "Demo"
                 })
-            elif "contact us" in answer_content or "reach out" in answer_content:
+            elif any(phrase in answer_content for phrase in ['contact us', 'reach out', 'contacting us']):
                 return jsonify({
                     "response_from": "RAG",
                     "faq_id": "",

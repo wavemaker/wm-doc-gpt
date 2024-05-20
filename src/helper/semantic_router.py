@@ -17,7 +17,8 @@ Ragpipe = Route(
         "Schedule demo and i want to know how ai being used in the wavemaker?",
         " what is wm and i want schedule demo?",
         "what is wm and how to contact to your team",
-        "How to see the logs in the wavemaker or how may connect with your team to understand more?"
+        "How to see the logs in the wavemaker or how may connect with your team to understand more?",
+        "what is pooch?"
     ],
 )
 
@@ -46,7 +47,7 @@ Demo = Route(
     "demo?",
     "demo, please?",
     "please schedule a demo?",
-    "schedule demo?",
+    "schedule a demo?",
     "How can i contact your team?",
     "Let's arrange a session to explore the product.",
     "Could we schedule a meeting to discuss the product?",
