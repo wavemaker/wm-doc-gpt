@@ -3,7 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from dataclasses import dataclass
-import PyPDF2
+import pdfplumber
+import io
 import logging
 
 UNWANTED = ["sticky", "hidden"]
@@ -41,30 +42,53 @@ class Scraper:
             return None, f"Error scraping website {url}: {e}"
         
 
-def scrape_pdf_and_save(url, folder_path):
-    try:
-        response = requests.get(url)
-        response.raise_for_status() 
-
-        with open(os.path.join(folder_path, 'temp.pdf'), 'wb') as file:
-            file.write(response.content)
-
-        text_content = ''
-        with open(os.path.join(folder_path, 'temp.pdf'), 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            num_pages = len(pdf_reader.pages)
-            for page_number in range(num_pages):
-                page = pdf_reader.pages[page_number]
-                text_content += page.extract_text()
-
-        parsed_url = urlparse(url)
-        file_name = parsed_url.path.strip('/')
-
-        filename = os.path.join(parsed_url.netloc, file_name).replace('/', '-')
-        file_path = os.path.join(folder_path, filename + '.md')
-        with open(file_path, 'w') as file:
-            file.write(text_content)
-
-        return "Reading the data from .pdf is done"
-    except Exception as e:
-        return str(e)
+class ScrapePDFAndSave:
+    def __init__(self, pdf_url):
+        self.pdf_url = pdf_url
+    
+    def extract_filename_from_url(self):
+        return os.path.basename(self.pdf_url)
+    
+    def read_pdf_from_web(self):
+        try:
+            response = requests.get(self.pdf_url)
+            response.raise_for_status()  
+            filename = self.extract_filename_from_url()
+            with pdfplumber.open(io.BytesIO(response.content)) as pdf:
+                text = ""
+                for page in pdf.pages:
+                    text += page.extract_text()
+            return True, text, filename
+        
+        except Exception as e:
+            logging.error(f"Error while reading pdf from web{e}")
+            return False, None, None
+    
+    def save_to_md(self, text, filename):
+        try:
+            md_filename = os.path.splitext(filename) + ".md"
+            
+            with open(md_filename, 'w') as f:
+                f.write(text)
+            logging.info(f"PDF data from web saved to {md_filename}")
+            return True
+        
+        except Exception as e:
+            logging.error(f"Error while saving pdf to .md {e}")
+            return False
+    
+    def convert_to_md(self):
+        try:
+            success, pdf_text, pdf_filename = self.read_pdf_from_web()
+            
+            if success:
+                if self.save_to_md(pdf_text, pdf_filename):
+                    logging.info("Conversion successful from pdf to .md")
+                    return True
+            
+            logging.error("Conversion failed while convertinf pdf to .md")
+            return False
+        
+        except Exception as e:
+            logging.error(f"Error while converting pdf to .md {e}")
+            return False
