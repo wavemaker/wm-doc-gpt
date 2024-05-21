@@ -20,3 +20,4 @@ bs4==0.0.2
 pdfplumber==0.11.0
 semantic-router==0.0.28
 gunicorn==21.2.0
+langchain-together==0.1.2

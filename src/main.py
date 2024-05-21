@@ -78,11 +78,14 @@ def answer_question():
         response_template["answer"] = "Thank you for reaching out to us. Please provide the following details, and our team will get back to you shortly. We're here to assist you and answer any questions you may have."
         response_template["intent"] = intent
         return jsonify(response_template)
+
+    elif intent == "Name":
+        response_template["answer"] = "Well, it's cute for one. I am trained to fetch stuff well, for another. And there's also an Indian wordplay where pooch means 'ask' in Hindi."
+        response_template["intent"] = intent
+        return jsonify(response_template)
     
     elif intent == "Ragpipe":
         pass
-
-
 
     logging.info("Query searching in the FAQ collection is started")
     sim_results = search(question)
