@@ -13,6 +13,7 @@ from langchain_together import ChatTogether
 import json
 import os
 from flask import jsonify
+import logging
 from src.config.config import( 
                     DATA_LOC, 
                     COLLECTION_NAME,
@@ -42,12 +43,16 @@ class ChatAssistant:
         model_choice = os.getenv('MODEL_CHOICE')
         
         if model_choice == 'OpenAI':
+            logging.info("OpenAI is being used")
+
             llm = ChatOpenAI(
                 model_name=MODEL,  
                 temperature=TEMPERATURE,
                 max_tokens=500
             )
         elif model_choice == 'Llama':
+            logging.info("Llama is being used")
+
             llm = ChatTogether(
                 together_api_key=os.getenv('TOGETHER_API'),
                 model="meta-llama/Llama-3-8b-chat-hf",
@@ -55,12 +60,6 @@ class ChatAssistant:
             )
         else:
             raise ValueError(f"Unsupported model choice: {model_choice}")
-        
-        llm = ChatOpenAI(
-                        model_name=MODEL, 
-                        temperature=TEMPERATURE,
-                        max_tokens = 500
-                         )
         
         db = Qdrant(
                     client=CUSTOM_QDRANT_CLIENT, 
