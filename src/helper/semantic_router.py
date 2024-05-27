@@ -18,7 +18,10 @@ Ragpipe = Route(
         " what is wm and i want schedule demo?",
         "what is wm and how to contact to your team",
         "How to see the logs in the wavemaker or how may connect with your team to understand more?",
-        "what is pooch?"
+        "what is pooch?",
+        "I don't want to schedule a demo?",
+        "I don't want a demo?",
+        "I am not interested in the demo?",
     ],
 )
 
@@ -34,10 +37,20 @@ Greeting = Route(
         "Hello there?",
         "Hi there?",
         "yo",
-        "Hey pooch",
-        "Hi pooch",
+        "Hi pooch?",
         "Hello pooch",
-        "who are you?"
+        "Hey pooch?"
+    ],
+)
+
+name = Route(
+    name="Name",
+    utterances=[
+        "what is pooch?",
+        "meaning of pooch?",
+        "Why are you called Pooch?",
+        "Why Pooch?",
+        "Why are you named Pooch?",
     ],
 )
 
@@ -51,24 +64,9 @@ Demo = Route(
     "How can i contact your team?",
     "Let's arrange a session to explore the product.",
     "Could we schedule a meeting to discuss the product?",
-    "I'd like to learn more about the product.",
-    "Can we set up a session to go over the product details?",
-    "I'm interested in understanding the product better.",
-    "When can we arrange a session to explore the product?",
-    "Let's plan a meeting to discuss the product further.",
-    "I'm eager to learn more. Can we schedule a session?",
-    "I'm curious about the product. How about a discussion?",
-    "I'm ready to explore the product. Let's have a session.",
-    "I'd like to see a walkthrough of the product, please.",
-    "Could we arrange a session to go through the product features?",
-    "When is a good time to discuss the product?",
-    "I'd love to have a conversation about the product.",
-    "Let's have a discussion about the product.",
-    "I'm interested in exploring the product further.",
-    "Could we have a meeting to explore the product together?",
-    "Let's schedule a meeting to dive into the product.",
-    "I'd like to discuss the product in more detail.",
-    "When can we arrange a meeting to talk about the product?",
+    "I'd like to learn more about the platform.",
+    "I'm interested in understanding the  platform better.",
+    "I'd like to see a walkthrough of the platform, please."
 ],
 )
 
@@ -89,17 +87,7 @@ Contact_us = Route(
         "Is there a contact form or email I can use?",
         "I'm interested in contacting your team. What's the process?",
         "How do I reach customer support?",
-        "How can I reach out for further assistance?",    ],
-)
-name = Route(
-    name="Name",
-    utterances=[
-        "what is pooch?",
-        "meaning of pooch?",
-        "Why are you called Pooch?",
-        "Why Pooch?",
-        "Why are you named Pooch?",
-    ],
+        "How can I reach out for further assistance?",],
 )
 routes = [Ragpipe, Greeting, Demo, Contact_us, name]
 
