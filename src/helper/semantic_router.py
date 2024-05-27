@@ -91,7 +91,17 @@ Contact_us = Route(
         "How do I reach customer support?",
         "How can I reach out for further assistance?",    ],
 )
-routes = [Ragpipe, Greeting, Demo, Contact_us]
+name = Route(
+    name="Name",
+    utterances=[
+        "what is pooch?",
+        "meaning of pooch?",
+        "Why are you called Pooch?",
+        "Why Pooch?",
+        "Why are you named Pooch?",
+    ],
+)
+routes = [Ragpipe, Greeting, Demo, Contact_us, name]
 
 
 def query_route(query):

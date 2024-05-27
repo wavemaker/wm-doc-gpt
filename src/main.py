@@ -78,11 +78,14 @@ def answer_question():
         response_template["answer"] = "Thank you for reaching out to us. Please provide the following details, and our team will get back to you shortly. We're here to assist you and answer any questions you may have."
         response_template["intent"] = intent
         return jsonify(response_template)
+
+    elif intent == "Name":
+        response_template["answer"] = "Well, it's cute for one. I am trained to fetch stuff well, for another. And there's also an Indian wordplay where pooch means 'ask' in Hindi."
+        response_template["intent"] = intent
+        return jsonify(response_template)
     
     elif intent == "Ragpipe":
         pass
-
-
 
     logging.info("Query searching in the FAQ collection is started")
     sim_results = search(question)
@@ -143,23 +146,7 @@ def handle_ingestion():
                 faq_collection = CollectionUploadChecker(FAQ_COLLECTION_NAME,
                                                          json_filename)
                 vectors = faq_collection.check_collection_upload_data()
-                destination_filename = FAQ_LOC
 
-                if not os.path.exists(destination_filename):
-                    with open(destination_filename, 'w') as new_file:
-                        json.dump({}, new_file)
-
-                with open(json_filename, 'r') as json_file:
-                    source_data = json.load(json_file)
-    
-                with open(destination_filename, 'r') as destination_file:
-                    destination_data = json.load(destination_file)
-
-                for item in source_data:
-                    destination_data.append(item)
-
-                with open(destination_filename, 'w') as destination_file:
-                    json.dump(destination_data, destination_file, indent=4)
                 os.remove(json_filename)
                 
                 if vectors :
@@ -184,23 +171,7 @@ def handle_ingestion():
                 faq_collection = CollectionUploadChecker(FAQ_COLLECTION_NAME,
                                                          json_filename)
                 vectors = faq_collection.check_collection_upload_data()
-                destination_filename = FAQ_LOC
 
-                if not os.path.exists(destination_filename):
-                    with open(destination_filename, 'w') as new_file:
-                        json.dump({}, new_file)
-
-                with open(json_filename, 'r') as json_file:
-                    source_data = json.load(json_file)
-    
-                with open(destination_filename, 'r') as destination_file:
-                    destination_data = json.load(destination_file)
-
-                for item in source_data:
-                    destination_data.append(item)
-
-                with open(destination_filename, 'w') as destination_file:
-                    json.dump(destination_data, destination_file, indent=4)
                 os.remove(json_filename)
                 
                 if vectors :

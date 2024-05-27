@@ -9,8 +9,11 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from src.helper.prepare_db import PrepareVectorDB
+from langchain_together import ChatTogether
 import json
+import os
 from flask import jsonify
+import logging
 from src.config.config import( 
                     DATA_LOC, 
                     COLLECTION_NAME,
@@ -36,12 +39,27 @@ class ChatAssistant:
     @staticmethod
     def rag(session_id, question, url):
         embeddings = OpenAIEmbeddings()
+
+        model_choice = os.getenv('MODEL_CHOICE')
         
-        llm = ChatOpenAI(
-                        model_name=MODEL, 
-                        temperature=TEMPERATURE,
-                        max_tokens = 500
-                         )
+        if model_choice == 'OpenAI':
+            logging.info("OpenAI is being used")
+
+            llm = ChatOpenAI(
+                model_name=MODEL,  
+                temperature=TEMPERATURE,
+                max_tokens=500
+            )
+        elif model_choice == 'Llama':
+            logging.info("Llama is being used")
+
+            llm = ChatTogether(
+                together_api_key=os.getenv('TOGETHER_API'),
+                model="meta-llama/Llama-3-8b-chat-hf",
+                max_tokens=500
+            )
+        else:
+            raise ValueError(f"Unsupported model choice: {model_choice}")
         
         db = Qdrant(
                     client=CUSTOM_QDRANT_CLIENT, 
