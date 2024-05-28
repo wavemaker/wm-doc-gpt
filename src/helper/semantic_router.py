@@ -36,10 +36,20 @@ Greeting = Route(
         "Hello there?",
         "Hi there?",
         "yo",
-        "Hey pooch",
-        "Hi pooch",
+        "Hi pooch?",
         "Hello pooch",
-        "who are you?"
+        "Hey pooch?"
+    ],
+)
+
+name = Route(
+    name="Name",
+    utterances=[
+        "what is pooch?",
+        "meaning of pooch?",
+        "Why are you called Pooch?",
+        "Why Pooch?",
+        "Why are you named Pooch?",
     ],
 )
 
@@ -88,6 +98,7 @@ Name = Route(
         "Why Pooch?",
         "Why are you named Pooch?",
     ],
+
 )
 routes = [Ragpipe, Greeting, Demo, Contact_us, Name]
 
