@@ -42,15 +42,7 @@ class ChatAssistant:
 
         model_choice = os.getenv('MODEL_CHOICE')
         
-        if model_choice == 'OpenAI':
-            logging.info("OpenAI is being used")
-
-            llm = ChatOpenAI(
-                model_name=MODEL,  
-                temperature=TEMPERATURE,
-                max_tokens=500
-            )
-        elif model_choice == 'Llama':
+        if model_choice == 'Llama':
             logging.info("Llama is being used")
 
             llm = ChatTogether(
@@ -58,8 +50,14 @@ class ChatAssistant:
                 model="meta-llama/Llama-3-8b-chat-hf",
                 max_tokens=500
             )
-        else:
-            raise ValueError(f"Unsupported model choice: {model_choice}")
+        else :
+            logging.info("OpenAI is being used")
+
+            llm = ChatOpenAI(
+                model_name=MODEL,  
+                temperature=TEMPERATURE,
+                max_tokens=500
+            )
         
         db = Qdrant(
                     client=CUSTOM_QDRANT_CLIENT, 

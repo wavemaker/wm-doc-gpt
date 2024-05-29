@@ -15,10 +15,9 @@ Ragpipe = Route(
         "How to create vatiable so please schedule demo to understand the more about how to create the variable?",
         "Who is the CEO and how can i contact to your team?",
         "Schedule demo and i want to know how ai being used in the wavemaker?",
-        " what is wm and i want schedule demo?",
+        "what is wm and i want schedule demo?",
         "what is wm and how to contact to your team",
         "How to see the logs in the wavemaker or how may connect with your team to understand more?",
-        "what is pooch?",
         "I don't want to schedule a demo?",
         "I don't want a demo?",
         "I am not interested in the demo?",
@@ -87,9 +86,21 @@ Contact_us = Route(
         "Is there a contact form or email I can use?",
         "I'm interested in contacting your team. What's the process?",
         "How do I reach customer support?",
-        "How can I reach out for further assistance?",],
+        "How can I reach out for further assistance?",    
+        ],
 )
-routes = [Ragpipe, Greeting, Demo, Contact_us, name]
+Name = Route(
+    name="Name",
+    utterances=[
+        "what is pooch?",
+        "meaning of pooch?",
+        "Why are you called Pooch?",
+        "Why Pooch?",
+        "Why are you named Pooch?",
+    ],
+
+)
+routes = [Ragpipe, Greeting, Demo, Contact_us, Name]
 
 
 def query_route(query):
