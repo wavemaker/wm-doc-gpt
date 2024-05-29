@@ -17,10 +17,7 @@ Ragpipe = Route(
         "Schedule demo and i want to know how ai being used in the wavemaker?",
         "what is wm and i want schedule demo?",
         "what is wm and how to contact to your team",
-        "How to see the logs in the wavemaker or how may connect with your team to understand more?",
-        "I don't want to schedule a demo?",
-        "I don't want a demo?",
-        "I am not interested in the demo?",
+        "How to see the logs in the wavemaker or how may connect with your team to understand more?"
     ],
 )
 
@@ -86,7 +83,10 @@ Contact_us = Route(
         "Is there a contact form or email I can use?",
         "I'm interested in contacting your team. What's the process?",
         "How do I reach customer support?",
-        "How can I reach out for further assistance?",    
+        "How can I reach out for further assistance?",
+        "I don't want to schedule a demo?",
+        "I don't want a demo?",
+        "I am not interested in the demo?"  
         ],
 )
 Name = Route(
