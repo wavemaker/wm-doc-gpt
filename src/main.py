@@ -19,6 +19,7 @@ from src.helper.prepare_db import PrepareAndSaveScrappedData
 from src.helper.prepare_db import SemanticSearch
 from src.helper.scrapper import ScrapePDFAndSave
 from src.helper.semantic_router import query_route
+from src.helper.followup_question_gen import FollowUpQuestionGenerator
 from src.config.config import (
         COLLECTION_NAME, 
         # DATA_LOC,
@@ -59,6 +60,7 @@ def answer_question():
     "response_from": "ROUTER",
     "faq_id": "",
     "question": "",
+    "follow_up_questions": "",
     "answer":"",
     "sources": "",
     "intent": ""
@@ -67,6 +69,12 @@ def answer_question():
     if intent == "Greeting":
         response_template["answer"] = "Hello, I'm Pooch! How can I assist you today? If you have any questions or need assistance related to WaveMaker, feel free to ask. I'm here to provide information and support regarding WaveMaker and its features."
         response_template["intent"] = intent
+        generator = FollowUpQuestionGenerator()
+        follow_up_questions = generator.generate_followup_questions(question)
+        follow_up_questions_string = follow_up_questions.strip('"')
+        follow_up_questions_list = follow_up_questions_string.split(', ')        
+        follow_up_questions_str = ', '.join(question.strip() for question in follow_up_questions_list)
+        response_template["follow_up_questions"] = follow_up_questions_str
         return jsonify(response_template)
     
     elif intent == "Demo":
@@ -82,6 +90,12 @@ def answer_question():
     elif intent == "Name":
         response_template["answer"] = "Well, it's cute for one. I am trained to fetch stuff well, for another. And there's also an Indian wordplay where pooch means 'ask' in Hindi."
         response_template["intent"] = intent
+        generator = FollowUpQuestionGenerator()
+        follow_up_questions = generator.generate_followup_questions(question)
+        follow_up_questions_string = follow_up_questions.strip('"')
+        follow_up_questions_list = follow_up_questions_string.split(', ')       
+        follow_up_questions_str = ', '.join(question.strip() for question in follow_up_questions_list)
+        response_template["follow_up_questions"] = follow_up_questions_str
         return jsonify(response_template)
     
     elif intent == "Ragpipe":
@@ -101,12 +115,15 @@ def answer_question():
         
         else:
             curatedAns = sim_results[0].payload['answer']
+            generator = FollowUpQuestionGenerator()
+            follow_up_questions = generator.generate_followup_questions(question)
             history.add_user_message(question)
             history.add_ai_message(curatedAns)
             return jsonify({
                             "response_from":"FAQ",
                             "faq_id":sim_results[0].id,
                             'question':sim_results[0].payload['question'], 
+                            "follow_up_questions": follow_up_questions,
                             'answer': sim_results[0].payload['answer'],
                             "sources": "",
                             "intent": ""})

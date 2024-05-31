@@ -10,6 +10,7 @@ from langchain_community.chat_message_histories import RedisChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from src.helper.prepare_db import PrepareVectorDB
 from langchain_together import ChatTogether
+from src.helper.followup_question_gen import FollowUpQuestionGenerator
 import json
 import os
 from flask import jsonify
@@ -267,6 +268,12 @@ class ChatAssistant:
                 }
             }
 
+
+            generator = FollowUpQuestionGenerator()
+            follow_up_questions = generator.generate_followup_questions(question)
+            follow_up_questions_string = follow_up_questions.strip('"')
+            follow_up_questions_list = follow_up_questions_string.split(', ')       
+            follow_up_questions = ', '.join(question.strip() for question in follow_up_questions_list)
             answer_content = answer.content
             
             if "demo" in answer_content:
@@ -274,6 +281,7 @@ class ChatAssistant:
                     "response_from": "RAG",
                     "faq_id": "",
                     "question": "",
+                    "follow_up_questions": follow_up_questions,
                     "answer": answer_content,
                     "sources": unique_sources_with_link,
                     "intent": "Demo"
@@ -283,6 +291,7 @@ class ChatAssistant:
                     "response_from": "RAG",
                     "faq_id": "",
                     "question": "",
+                    "follow_up_questions": follow_up_questions,
                     "answer": answer_content,
                     "sources": unique_sources_with_link,
                     "intent": "Contact_us"
@@ -296,6 +305,7 @@ class ChatAssistant:
                     "response_from": "RAG",
                     "faq_id": "",
                     "question": "",
+                    "follow_up_questions": follow_up_questions,
                     "answer": answer_content,
                     "sources": unique_sources_with_link,
                     "intent": ""
