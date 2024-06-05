@@ -13,9 +13,9 @@ class FollowUpQuestionGenerator:
         )
         self.template = """Imagine yourself as the user, adept at generating follow-up questions based on the provided questions {user_question}. 
                             Generally, users inquire about the WaveMaker low-code platform and its technical aspects and Try to generate the questions based on the type of intent. 
-                            Aim to create 2 questions that will motivate the user to request a demo, with each question approximately 20 characters long.  
+                            Aim to create "2 QUESTIONS" that will motivate the user to request a demo, with each question approximately 20 characters long.  
                             Make sure that ONLY return the questions in the list with double inverted commas, separated by commas within square brackets without adding any sentences in the beginning.
-                            I will get fired if you don't return LIST with DOUBLE inverted commas, separated by commas within SQUARE brackets.
+                            I will be fired if you don't return a LIST with DOUBLE inverted commas, and if the list of questions is greater than 2.
                             """
         self.prompt = PromptTemplate(
             template=self.template,
