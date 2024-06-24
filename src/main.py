@@ -4,7 +4,7 @@ import uuid
 import json
 from datetime import timedelta
 import logging
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, abort
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
@@ -501,6 +501,76 @@ def scrape():
             response_data = {"message": f"Internal server error: {e}"}
             return jsonify(response_data), 500
     return jsonify({"message": "Scraping is successfull"}), 200
+
+API_KEYS = os.getenv('API_KEYS') 
+
+def require_api_key(f):
+    def decorated_function(*args, **kwargs):
+        if 'API-Key' not in request.headers or request.headers['API-Key'] not in API_KEYS:
+            abort(401)  # Unauthorized
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/insertion', methods=['POST'])
+@require_api_key
+def insertion():
+    if request.is_json:
+        data = request.json
+        
+        if 'Added_files' in data :
+            added_files = data['Added_files']
+
+            for source in added_files:
+                dele = DeleteDuplicates(source, COLLECTION_NAME)
+                all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(collection_name=COLLECTION_NAME,limit = 20)
+                result_id = dele.get_id_from_source(all_data, source)
+
+                if result_id:
+                    dele.delete_vector(result_id)
+                    read_docs = PrepareVectorDB(source)                    
+                    stored_vector = read_docs.prepare_and_save_vectordb()
+
+                    # dele.add_to_directory(source)
+                    
+                    if stored_vector != None:
+                        response_data = {"message": f"Docs from the Github added successfully with collection: {COLLECTION_NAME}"}
+                        # return jsonify(response_data)
+                    
+                    else:
+                        response_data = {"message": f"Docs from the Github failed with collection: {COLLECTION_NAME}"}
+                        # return jsonify(response_data)
+                else:
+                    read_docs = PrepareVectorDB(source)
+                    stored_vector = read_docs.prepare_and_save_vectordb()
+
+                    # dele.add_to_directory(source)
+                    
+                    if stored_vector != None:
+                        response_data = {"message": f"Docs from the Github added successfully with collection: {COLLECTION_NAME}"}
+                        # return jsonify(response_data)
+                    
+                    else:
+                        response_data = {"message": f"Docs from the Github failed with collection: {COLLECTION_NAME}"}
+                        # return jsonify(response_data)
+
+            response_data = {"message": f"Docs from the Github added successfully with collection: {COLLECTION_NAME}"}
+            return jsonify(response_data)
+
+        # elif 'Updated_files' in data:
+        #     added_files = data['Updated_files']
+        elif 'Deleted_files' in data:
+
+            added_files = data['Deleted_files']
+
+            for source in added_files:
+                dele = DeleteDuplicates(source, COLLECTION_NAME)
+                all_data, _ = CUSTOM_QDRANT_CLIENT.scroll(collection_name=COLLECTION_NAME,limit = 20)
+                result_id = dele.get_id_from_source(all_data, source)
+
+                if result_id:
+                    dele.delete_vector(result_id)
+            response_data = {"message": "Data deleted successfully"}
+            return jsonify(response_data)
 
 @app.route('/delete_collection', methods=['GET'])
 def del_collection():
