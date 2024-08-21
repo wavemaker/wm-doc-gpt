@@ -17,10 +17,10 @@ from src.config.config import(
                     PERSIST_DIRECTORY,
                     QDRANT_API_KEY,
                     CUSTOM_QDRANT_CLIENT,
-                    COLLECTION_NAME,
                     WAVEMAKER_WEBSITE,
                     FAQ_COLLECTION_NAME,
-                    VIDEO_COLLECTION
+                    VIDEO_COLLECTION,
+                    WEBSITE_COLLECTION
                 )
 
 # load_dotenv()
@@ -29,7 +29,7 @@ embedding = OpenAIEmbeddings()
 
 encoder = SentenceTransformerLoader.get_model()
 qdrant_scraper_client = Qdrant(CUSTOM_QDRANT_CLIENT, 
-                               COLLECTION_NAME, 
+                               WEBSITE_COLLECTION, 
                                embedding)
 
 qdrant_video_client = Qdrant(CUSTOM_QDRANT_CLIENT, 
@@ -38,10 +38,11 @@ qdrant_video_client = Qdrant(CUSTOM_QDRANT_CLIENT,
 
 
 class PrepareVectorDB:
-    def __init__(self,PATH):
+    def __init__(self, PATH, collection_name):
         self.data = None
         self.PATH = PATH
         self.logger = logging.getLogger(__name__)
+        self.collection_name = collection_name
         # self.persist_directory = PERSIST_DIRECTORY
 
     def load_data(self):
@@ -119,9 +120,9 @@ class PrepareVectorDB:
             vectordb = Qdrant.from_documents(documents=chunked_documents,
                                              embedding=embedding,
                                              url=QUDRANT_URL,
-                                             collection_name=COLLECTION_NAME,
+                                             collection_name=self.collection_name,
                                              prefer_grpc=False)
-            logging.info(f"VectorDB is created and saved and stored the embeddings in the vector DB  with collection name {COLLECTION_NAME}")
+            logging.info(f"VectorDB is created and saved and stored the embeddings in the vector DB  with collection name {self.collection_name}")
             return vectordb
         
         except Exception as e:

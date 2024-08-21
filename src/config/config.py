@@ -7,20 +7,21 @@ from qdrant_client import models, QdrantClient
 DATA_LOC = "/data/"
 
 FAQ_LOC = "/data/faq/output.json"
-GITHUB_DOCS = "/data/docs"
-WAVEMAKER_WEBSITE = "/data/wavemaker_website"
-WAVEMAKER_AI = "/data/wavemaker_AI"
+GITHUB_DOCS = "/data/wm_website/docs"
+WAVEMAKER_WEBSITE = "/data/wm_website/wavemaker_website"
+WAVEMAKER_AI = "/data/wm_website/wavemaker_AI"
 
-DOCS_DATA_LOC = "/data/docs"
-WEBSITE_DATA_LOC = ""
+##### Fror website add the all_data
+DOCS_DATA_LOC = "/data/wm_website/docs"
+WEBSITE_DATA_LOC = "/data/wm_website"
 
 #==== Qudarant Conf =====#
 PORT = 6333
 HOSTNAME = 'qdrant'
 VIDEO_COLLECTION = "WM_VIDEO"
 DOCS_COLLECTION = "WM_DOCS"
-COLLECTION_NAME = "WAVE"
-WEBSITE_COLLECTION = COLLECTION_NAME
+# COLLECTION_NAME = "WAVE"
+WEBSITE_COLLECTION = "WM_WEBSITE"
 QUDRANT_URL = f"http://qdrant:6333"
 PERSIST_DIRECTORY = ""
 FAQ_COLLECTION_NAME = "FAQDATAQUE"
@@ -110,3 +111,4 @@ UPLOAD_SCRAPPED_DATA = "/data/scrapped_data"
 class files_:
     PDF_UPLOAD_FOLDER = os.getenv('VIDEO_TRANSCRIBE_PDF_DIRECTORY', 'transcibe_pdf')
     MD_OUTPUT_FOLDER = os.getenv('TRANSCRIBE_MARKDOWN_DIRECTORY', 'transcribe_markdown')
+

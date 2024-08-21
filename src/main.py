@@ -23,7 +23,7 @@ from src.helper.followup_question_gen import FollowUpQuestionGenerator
 from src.helper.preprocess_video import PDFProcessor, format_hyperlinks
 from src.config.config import files_
 from src.config.config import (
-        COLLECTION_NAME, 
+        #COLLECTION_NAME, 
         # DATA_LOC,
         REDIS_URL,
         FAQ_LOC,
@@ -34,10 +34,13 @@ from src.config.config import (
         FILES_FROM_REQUEST,
         UPLOAD_SCRAPPED_DATA,
         CUSTOM_QDRANT_CLIENT,
-        VIDEO_COLLECTION
+        VIDEO_COLLECTION,
+        DOCS_COLLECTION,
+        WAVEMAKER_WEBSITE,
+        WEBSITE_COLLECTION
 )
 
-app = Flask(__name__)  # Import the configuration class
+app = Flask(__name__)
 app.config.from_object(files_)
 
 @app.route('/answer', methods=['POST'])
@@ -47,7 +50,7 @@ def answer_question():
 
     user_id = request.headers.get('Uuid')
     
-    logging.info("user_id",user_id)
+    logging.info(f"user_id: {user_id}")
 
     data = request.json
     question = data.get('question')
@@ -220,52 +223,36 @@ def handle_ingestion():
 
     elif group == "docs":
         try:
-            if group == "docs":
-                read_docs = PrepareVectorDB(GITHUB_DOCS)
-                stored_vector = read_docs.prepare_and_save_vectordb()
-                
-                if stored_vector != None:
-                    response_data = {"message": f"Docs data ingested successfull with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data)
-                
-                else:
-                    response_data = {"message": f"Docs data ingested failed with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data)
+            read_docs = PrepareVectorDB(GITHUB_DOCS, DOCS_COLLECTION)
+            stored_vector = read_docs.prepare_and_save_vectordb()
+            
+            if stored_vector is not None:
+                response_data = {"message": f"Docs data ingested successfully with collection: {DOCS_COLLECTION}"}
+            else:
+                response_data = {"message": f"Docs data ingestion failed with collection: {DOCS_COLLECTION}"}
+            
+            return jsonify(response_data)
         
         except Exception as e:
-            return jsonify({"error": f"An error occurred: {e}"}), 500
-            
+            return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+    
     elif group == "website":
         try:
-            read_docs = PrepareVectorDB(WAVEMAKER_WEBSITE)
-            stored_vector = read_docs.prepare_and_save_vectordb()
-            
-            if stored_vector != None:
-                response_data = {"message": f"Website data ingested successfull with collection: {COLLECTION_NAME}"}
-                return jsonify(response_data)
-            
-            else:
-                response_data = {"message": f"Website data ingested failed with collection: {COLLECTION_NAME}"}
-                return jsonify(response_data)
-        
+            for docs_source in [GITHUB_DOCS, WAVEMAKER_WEBSITE, WAVEMAKER_AI]:
+                read_docs = PrepareVectorDB(docs_source, WEBSITE_COLLECTION)
+                stored_vector = read_docs.prepare_and_save_vectordb()
+
+                if stored_vector is None:
+                    response_data = {"message": f"Docs data ingestion failed with collection: {WEBSITE_COLLECTION}"}
+                    return jsonify(response_data)
+
+            response_data = {"message": f"Website data ingested successfully with collection: {WEBSITE_COLLECTION}"}
+            return jsonify(response_data)
+
         except Exception as e:
-            return jsonify({"error": f"An error occurred: {e}"}), 500
-            
-    elif group == "ai_website":
-        try: 
-            read_docs = PrepareVectorDB(WAVEMAKER_AI)
-            stored_vector = read_docs.prepare_and_save_vectordb()
-            
-            if stored_vector != None:
-                response_data = {"message": f"Wavemakerai website data ingested successfull with collection: {COLLECTION_NAME}"}
-                return jsonify(response_data)
-            
-            else:
-                response_data = {"message": f"Wavemakerai website data ingested failed with collection: {COLLECTION_NAME}"}
-                return jsonify(response_data)  
-        
-        except Exception as e:
-            return jsonify({"error": f"An error occurred: {e}"}), 500
+            response_data = {"message": f"An error occurred: {str(e)}"}
+            return jsonify(response_data)
     
     elif group == "video_data":
     

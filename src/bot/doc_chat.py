@@ -17,7 +17,6 @@ from flask import jsonify
 import logging
 from src.config.config import( 
                     DATA_LOC, 
-                    COLLECTION_NAME,
                     DOCS_COLLECTION,
                     WEBSITE_COLLECTION,
                     MODEL,
@@ -44,11 +43,11 @@ class ChatAssistant:
     def load_chunks(cls, DATA_LOC):
         
         if cls.website_loaded_chunks or cls.docs_loaded_chunks is None:
-            read_docs = PrepareVectorDB(DATA_LOC)
+            read_docs = PrepareVectorDB(DATA_LOC, WEBSITE_COLLECTION)
             data = read_docs.load_data()
             cls.website_loaded_chunks = read_docs.chunk_documents()
 
-            docs = PrepareVectorDB(DATA_LOC)
+            docs = PrepareVectorDB(DATA_LOC, DOCS_COLLECTION)
             docsData = docs.load_data()
             cls.docs_loaded_chunks = docs.chunk_documents()  
 
