@@ -132,6 +132,7 @@ def answer_question():
 
 @app.route('/ingest', methods=['POST', 'PUT', 'DELETE'])
 def handle_ingestion():
+    # group = request.form['group']
     group = request.args.get('group')
 
 
