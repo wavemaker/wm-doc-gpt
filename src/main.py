@@ -15,11 +15,13 @@ from src.bot.faq_chat import CollectionUploadChecker
 from src.bot.faq_chat import search
 from src.bot.doc_chat import ChatAssistant
 from src.helper.prepare_db import DeleteDuplicates
-from src.helper.prepare_db import PrepareAndSaveScrappedData
+from src.helper.prepare_db import PrepareAndSaveScrappedData, PrepareAndSaveVideoTranscribe
 from src.helper.prepare_db import SemanticSearch
 from src.helper.scrapper import ScrapePDFAndSave
 from src.helper.semantic_router import query_route
 from src.helper.followup_question_gen import FollowUpQuestionGenerator
+from src.helper.preprocess_video import PDFProcessor, format_hyperlinks
+from src.config.config import files_
 from src.config.config import (
         COLLECTION_NAME, 
         # DATA_LOC,
@@ -31,14 +33,12 @@ from src.config.config import (
         WAVEMAKER_AI,
         FILES_FROM_REQUEST,
         UPLOAD_SCRAPPED_DATA,
-        CUSTOM_QDRANT_CLIENT
+        CUSTOM_QDRANT_CLIENT,
+        VIDEO_COLLECTION
 )
 
-app = Flask(__name__)
-
-# app.secret_key = os.environ["SECRET_KEY"]
-
-# app.permanent_session_lifetime = timedelta(minutes=5)
+app = Flask(__name__)  # Import the configuration class
+app.config.from_object(files_)
 
 @app.route('/answer', methods=['POST'])
 def answer_question():
@@ -51,6 +51,8 @@ def answer_question():
 
     data = request.json
     question = data.get('question')
+    service_mode = request.args.get('service_mode')
+
     if question.endswith('?'):
         question = question.rstrip('?')
 
@@ -110,7 +112,7 @@ def answer_question():
         if hit.score < 0.85:
             logging.info("Rag flow initilised for the query")
             assistant = ChatAssistant()
-            answer = assistant.answer_question(user_id, question,REDIS_URL)
+            answer = assistant.answer_question(user_id, question,REDIS_URL, service_mode)
             return answer
         
         else:
@@ -130,10 +132,9 @@ def answer_question():
 
 @app.route('/ingest', methods=['POST', 'PUT', 'DELETE'])
 def handle_ingestion():
-    # group = request.form['group']
     group = request.args.get('group')
 
-    
+
     if group is None:
         return jsonify({"error": "Missing required query parameters"}), 400
     
@@ -216,7 +217,7 @@ def handle_ingestion():
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
 
-    elif group == "docs" or "website" or "ai_website":
+    elif group == "docs":
         try:
             if group == "docs":
                 read_docs = PrepareVectorDB(GITHUB_DOCS)
@@ -229,33 +230,97 @@ def handle_ingestion():
                 else:
                     response_data = {"message": f"Docs data ingested failed with collection: {COLLECTION_NAME}"}
                     return jsonify(response_data)
-            
-            elif group == "website":
-                read_docs = PrepareVectorDB(WAVEMAKER_WEBSITE)
-                stored_vector = read_docs.prepare_and_save_vectordb()
-                
-                if stored_vector != None:
-                    response_data = {"message": f"Website data ingested successfull with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data)
-                
-                else:
-                    response_data = {"message": f"Website data ingested failed with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data)
-            
-            elif group == "ai_website": 
-                read_docs = PrepareVectorDB(WAVEMAKER_AI)
-                stored_vector = read_docs.prepare_and_save_vectordb()
-                
-                if stored_vector != None:
-                    response_data = {"message": f"Wavemakerai website data ingested successfull with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data)
-                
-                else:
-                    response_data = {"message": f"Wavemakerai website data ingested failed with collection: {COLLECTION_NAME}"}
-                    return jsonify(response_data)  
-            
+        
         except Exception as e:
             return jsonify({"error": f"An error occurred: {e}"}), 500
+            
+    elif group == "website":
+        try:
+            read_docs = PrepareVectorDB(WAVEMAKER_WEBSITE)
+            stored_vector = read_docs.prepare_and_save_vectordb()
+            
+            if stored_vector != None:
+                response_data = {"message": f"Website data ingested successfull with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data)
+            
+            else:
+                response_data = {"message": f"Website data ingested failed with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data)
+        
+        except Exception as e:
+            return jsonify({"error": f"An error occurred: {e}"}), 500
+            
+    elif group == "ai_website":
+        try: 
+            read_docs = PrepareVectorDB(WAVEMAKER_AI)
+            stored_vector = read_docs.prepare_and_save_vectordb()
+            
+            if stored_vector != None:
+                response_data = {"message": f"Wavemakerai website data ingested successfull with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data)
+            
+            else:
+                response_data = {"message": f"Wavemakerai website data ingested failed with collection: {COLLECTION_NAME}"}
+                return jsonify(response_data)  
+        
+        except Exception as e:
+            return jsonify({"error": f"An error occurred: {e}"}), 500
+    
+    elif group == "video_data":
+    
+        results = []
+        base_uri = 'https://app.guidde.com'
+
+        def ensure_directories():
+            os.makedirs(files_.PDF_UPLOAD_FOLDER, exist_ok=True)
+            os.makedirs(files_.MD_OUTPUT_FOLDER, exist_ok=True)
+
+        ensure_directories()
+
+        try:
+            if 'files' not in request.files:
+                logging.error("No files part in the request.")
+                return jsonify({'error': 'No files part'}), 400
+
+            files = request.files.getlist('files')
+            if not files:
+                logging.error("No files selected.")
+                return jsonify({'error': 'No files selected'}), 400
+
+            for file in files:
+                if file and file.filename.endswith('.pdf'):
+                    try:
+                        filename = secure_filename(file.filename)
+                        pdf_path = os.path.join(files_.PDF_UPLOAD_FOLDER, filename)
+                        file.save(pdf_path)
+
+                        pdf_processor = PDFProcessor(pdf_path)
+                        text = pdf_processor.extract_text()
+                        hyperlinks = pdf_processor.extract_specific_hyperlinks(base_uri)
+                        md_file = pdf_processor.save_to_md(text, hyperlinks)
+
+                        formatted_hyperlinks = format_hyperlinks(hyperlinks)
+
+                        results.append((formatted_hyperlinks, md_file))
+                    except Exception as e:
+                        logging.error(f"Error processing file {file.filename}: {e}")
+                        results.append({'error': f"Error processing file {file.filename}: {str(e)}"})
+
+            for hyperlinks, md_file in results:
+                if isinstance(hyperlinks, str) and isinstance(md_file, str):  # Ensure the result is valid
+                    try:
+                        read_docs = PrepareAndSaveVideoTranscribe(md_file, VIDEO_COLLECTION)
+                        read_docs.prepare_and_save_transcribe_data(hyperlinks)
+                    except Exception as e:
+                        logging.error(f"Error processing file {md_file}: {e}")
+                        return jsonify({'error': f"Failed to process file {md_file}: {str(e)}"}), 500
+
+            return jsonify({'message': f'Video transcribe ingested successfull with collection: {VIDEO_COLLECTION}'})
+
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            return jsonify({'error': 'An unexpected error occurred'}), 500
+
 
 @app.route('/scrape', methods=['POST', 'PUT', 'DELETE'])
 def scrape():

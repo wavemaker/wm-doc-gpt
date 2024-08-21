@@ -19,7 +19,8 @@ from src.config.config import(
                     CUSTOM_QDRANT_CLIENT,
                     COLLECTION_NAME,
                     WAVEMAKER_WEBSITE,
-                    FAQ_COLLECTION_NAME
+                    FAQ_COLLECTION_NAME,
+                    VIDEO_COLLECTION
                 )
 
 # load_dotenv()
@@ -29,6 +30,10 @@ embedding = OpenAIEmbeddings()
 encoder = SentenceTransformerLoader.get_model()
 qdrant_scraper_client = Qdrant(CUSTOM_QDRANT_CLIENT, 
                                COLLECTION_NAME, 
+                               embedding)
+
+qdrant_video_client = Qdrant(CUSTOM_QDRANT_CLIENT, 
+                               VIDEO_COLLECTION, 
                                embedding)
 
 
@@ -56,7 +61,7 @@ class PrepareVectorDB:
                 return self.data
 
             else:
-                loader = CustomDirectoryLoader(self.PATH, 
+                loader = CustomDirectoryLoader(self.PATH,
                                                glob="**/*.md", 
                                                loader_cls=TextLoader)
                 self.data = loader.load()
@@ -220,6 +225,115 @@ class PrepareAndSaveScrappedData():
             content_list.clear()
             source_list.clear()
             
+            return True
+            
+        except Exception as e:
+            logging.error(f"An error occurred in prepare_and_save_scrapped_data: {str(e)}")
+
+
+class PrepareAndSaveVideoTranscribe:
+    def __init__(self,  PATH, collection_name):
+        self.PATH = PATH
+        self.scrapped_data = None
+        self.collection_name = collection_name
+        self.logger = logging.getLogger(__name__)
+
+    def load_scrapped_data(self):
+        try:
+            data_loader = CustomDirectoryLoader(self.PATH, 
+                                        glob="**/*.md", 
+                                        loader_cls=TextLoader)
+            self.scrapped_data = data_loader.load()
+            print("Data is done")
+            
+            if self.scrapped_data is not None:
+                logging.info("Loading .md of Transcribe data is done")
+                return self.scrapped_data
+                print("DOne========>")
+            else:
+                return None
+        except Exception as e:
+            logging.error(f"Error loading scrapped data: {e}")
+            return None
+    
+    def chunk_scrapped_data(self):
+        try:
+            if self.scrapped_data is None:
+                logging.error("Transcribe data is not loaded. Aborting chunk_scrapped_data.")
+                return None
+            
+            logging.info("Loading Transcribe data for chunking")
+
+            splitter = RecursiveCharacterTextSplitter(chunk_size=600, 
+                                                      chunk_overlap=30)
+            data_chunks = splitter.split_documents(self.scrapped_data)
+
+            logging.info("Chunking of the scrapped data is done")
+            return data_chunks
+        
+        except Exception as e:
+            logging.error(f"Error chunking scrapped data: {e}")
+            return None
+    
+    def check_and_create_collection(self):
+        try:
+            collections = CUSTOM_QDRANT_CLIENT.get_collections().collections
+
+            existing_collection = False
+            for collection in collections:
+                if self.collection_name == collection.name:
+                    existing_collection = True
+                    break
+
+            if not existing_collection:
+                CUSTOM_QDRANT_CLIENT.recreate_collection(
+                    self.collection_name,
+                    vectors_config=VectorParams(
+                        size=1536,
+                        distance=Distance.COSINE,
+                    ),
+                )
+
+            return existing_collection
+        
+        except Exception as e:
+            logging.error(f"An error occurred in check_and_create_collection: {str(e)}")
+
+
+    def prepare_and_save_transcribe_data(self,URL):
+        try:
+            self.load_scrapped_data()
+
+            if self.scrapped_data is None:
+                logging.error("Data is not loaded. Aborting prepare_and_save_scrapped_data.")
+                return None
+            
+            scrapped_data_chunks = self.chunk_scrapped_data()
+            
+            if scrapped_data_chunks is None:
+                logging.error("Chunked documents are not available. Aborting prepare_and_save_scrapped_data.")
+                return None
+
+            content_list = []
+            source_list = []
+
+            for document in scrapped_data_chunks:
+                content_list.append( document.page_content)
+                base_filename = os.path.basename(document.metadata["source"])
+
+                if "https://app.guidde.com" in URL:                    
+                        source_list.append({"source": URL})
+                else : 
+                    full_source_path = os.path.join(URL, base_filename)
+                    
+                    source_list.append({"source": URL})
+            
+            self.check_and_create_collection()
+            qdrant_video_client.add_texts(content_list, source_list)
+            logging.info("Data added to db using the add_texts method")
+            
+            content_list.clear()
+            source_list.clear()
             return True
             
         except Exception as e:
