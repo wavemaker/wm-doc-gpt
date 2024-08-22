@@ -250,7 +250,6 @@ class PrepareAndSaveVideoTranscribe:
             if self.scrapped_data is not None:
                 logging.info("Loading .md of Transcribe data is done")
                 return self.scrapped_data
-                print("DOne========>")
             else:
                 return None
         except Exception as e:
@@ -265,8 +264,8 @@ class PrepareAndSaveVideoTranscribe:
             
             logging.info("Loading Transcribe data for chunking")
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=600, 
-                                                      chunk_overlap=30)
+            splitter = RecursiveCharacterTextSplitter(chunk_size=400, 
+                                                      chunk_overlap=20)
             data_chunks = splitter.split_documents(self.scrapped_data)
 
             logging.info("Chunking of the scrapped data is done")

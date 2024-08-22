@@ -78,7 +78,7 @@ class ChatAssistant:
                                                 Qdrant(
                                                     client=CUSTOM_QDRANT_CLIENT, 
                                                     embeddings=embeddings, 
-                                                    collection_name=collection).as_retriever()
+                                                    collection_name=collection).as_retriever(search_kwargs={"score_threshold": 0.7, "k": 2} if collection == VIDEO_COLLECTION else {})
                                                 for collection in (WEBSITE_COLLECTION, 
                                                                    VIDEO_COLLECTION)
                                                 )
@@ -186,10 +186,11 @@ class ChatAssistant:
                                                 Qdrant(
                                                     client=CUSTOM_QDRANT_CLIENT, 
                                                     embeddings=embeddings, 
-                                                    collection_name=collection).as_retriever()
+                                                    collection_name=collection).as_retriever(search_kwargs={"score_threshold": 0.7, "k": 2} if collection == VIDEO_COLLECTION else {})
                                                 for collection in (DOCS_COLLECTION, 
                                                                    VIDEO_COLLECTION)
                                                 )
+
         
         
         if ChatAssistant.docs_loaded_chunks is None:
@@ -277,6 +278,7 @@ class ChatAssistant:
 
             videos_ = ChatAssistant.transcribe_retriever.invoke(question)
             dara = [doc.metadata['source'] for doc in videos_]
+            dara = list(set(dara))
 
 
             def add_website_url(file_path):
@@ -417,6 +419,7 @@ class ChatAssistant:
 
             videos_ = ChatAssistant.transcribe_retriever.invoke(question)
             dara = [doc.metadata['source'] for doc in videos_]
+            dara = list(set(dara))
 
             def add_website_url(file_path):
                 docs_url = 'https://docs.wavemaker.com'
@@ -548,3 +551,5 @@ class ChatAssistant:
         elif question_from == "platform":
             response = ChatAssistant.questiongen(question)
             return response
+
+                                                

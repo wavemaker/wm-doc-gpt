@@ -111,4 +111,3 @@ UPLOAD_SCRAPPED_DATA = "/data/scrapped_data"
 class files_:
     PDF_UPLOAD_FOLDER = os.getenv('VIDEO_TRANSCRIBE_PDF_DIRECTORY', 'transcibe_pdf')
     MD_OUTPUT_FOLDER = os.getenv('TRANSCRIBE_MARKDOWN_DIRECTORY', 'transcribe_markdown')
-
