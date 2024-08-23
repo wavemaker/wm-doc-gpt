@@ -27,3 +27,4 @@ semantic-router==0.0.60
 python-dotenv==1.0.1
 pandas==2.2.2
 pdfplumber==0.11.4
+tiktoken==0.7.0

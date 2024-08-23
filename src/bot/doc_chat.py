@@ -78,7 +78,10 @@ class ChatAssistant:
                                                 Qdrant(
                                                     client=CUSTOM_QDRANT_CLIENT, 
                                                     embeddings=embeddings, 
-                                                    collection_name=collection).as_retriever(search_kwargs={"score_threshold": 0.7, "k": 2} if collection == VIDEO_COLLECTION else {})
+                                                    collection_name=collection).as_retriever(search_kwargs={"score_threshold": 0.80, 
+                                                                                                            "k": 2} 
+                                                                                                            if collection == VIDEO_COLLECTION else {}
+                                                                                                            )
                                                 for collection in (WEBSITE_COLLECTION, 
                                                                    VIDEO_COLLECTION)
                                                 )
@@ -173,20 +176,15 @@ class ChatAssistant:
                 model_name=MODEL,  
                 temperature=TEMPERATURE,
                 max_tokens=500
-            )                        
-        
-        # docs_db = Qdrant(
-        #             client=CUSTOM_QDRANT_CLIENT, 
-        #             embeddings=embeddings, 
-        #             collection_name=DOCS_COLLECTION
-        #             )
-        # docs_retriever = docs_db.as_retriever()
+            )
 
         docs_retriever, transcribe_retriever = (
                                                 Qdrant(
                                                     client=CUSTOM_QDRANT_CLIENT, 
                                                     embeddings=embeddings, 
-                                                    collection_name=collection).as_retriever(search_kwargs={"score_threshold": 0.7, "k": 2} if collection == VIDEO_COLLECTION else {})
+                                                    collection_name=collection).as_retriever(search_kwargs={"score_threshold": 0.8, 
+                                                                                                            "k": 2} 
+                                                                                                            if collection == VIDEO_COLLECTION else {})
                                                 for collection in (DOCS_COLLECTION, 
                                                                    VIDEO_COLLECTION)
                                                 )
@@ -277,8 +275,9 @@ class ChatAssistant:
             sources = [doc.metadata['source'] for doc in docs]
 
             videos_ = ChatAssistant.transcribe_retriever.invoke(question)
-            dara = [doc.metadata['source'] for doc in videos_]
-            dara = list(set(dara))
+            print("Videos:", videos_)
+            videos = [doc.metadata['source'] for doc in videos_]
+            video_sources = list(set(videos))
 
 
             def add_website_url(file_path):
@@ -377,7 +376,7 @@ class ChatAssistant:
                         "follow_up_questions": follow_up_questions,
                         "answer": answer_content,
                         "sources": unique_sources_with_link,
-                        "video_sources":dara,
+                        "video_sources":video_sources,
                         "intent": "Demo"
                     })
                 elif any(keyword in answer_content for keyword in ["contact us", "reach out", "contacting us"]):
@@ -388,7 +387,7 @@ class ChatAssistant:
                         "follow_up_questions": follow_up_questions,
                         "answer": answer_content,
                         "sources": unique_sources_with_link,
-                        "video_sources":dara,
+                        "video_sources":video_sources,
                         "intent": "Contact_us"
                     })
                     
@@ -403,7 +402,7 @@ class ChatAssistant:
                         "follow_up_questions": follow_up_questions,
                         "answer": answer_content,
                         "sources": unique_sources_with_link,
-                        "video_sources":dara,
+                        "video_sources":video_sources,
                         "intent": ""
                     })
         
@@ -418,8 +417,8 @@ class ChatAssistant:
             sources = [doc.metadata['source'] for doc in docs]
 
             videos_ = ChatAssistant.transcribe_retriever.invoke(question)
-            dara = [doc.metadata['source'] for doc in videos_]
-            dara = list(set(dara))
+            video = [doc.metadata['source'] for doc in videos_]
+            video_sources = list(set(video))
 
             def add_website_url(file_path):
                 docs_url = 'https://docs.wavemaker.com'
@@ -518,7 +517,7 @@ class ChatAssistant:
                         "follow_up_questions": follow_up_questions,
                         "answer": answer_content,
                         "sources": unique_sources_with_link,
-                        "video_sources":dara,
+                        "video_sources":video_sources,
                         "intent": "Demo"
                     })
                 elif any(keyword in answer_content for keyword in ["contact us", "reach out", "contacting us"]):
@@ -529,7 +528,7 @@ class ChatAssistant:
                         "follow_up_questions": follow_up_questions,
                         "answer": answer_content,
                         "sources": unique_sources_with_link,
-                        "video_sources":dara,
+                        "video_sources":video_sources,
                         "intent": "Contact_us"
                     })
                     
@@ -544,7 +543,7 @@ class ChatAssistant:
                         "follow_up_questions": follow_up_questions,
                         "answer": answer_content,
                         "sources": unique_sources_with_link,
-                        "video_sources":dara,
+                        "video_sources":video_sources,
                         "intent": ""
                     })
         

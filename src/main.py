@@ -299,11 +299,16 @@ def handle_ingestion():
                     try:
                         read_docs = PrepareAndSaveVideoTranscribe(md_file, VIDEO_COLLECTION)
                         read_docs.prepare_and_save_transcribe_data(hyperlinks)
+
+                        if read_docs is None:
+                            response_data = {"message": f"Video data ingestion failed with collection: {VIDEO_COLLECTION}"}
+                            return jsonify(response_data)
+                    
                     except Exception as e:
                         logging.error(f"Error processing file {md_file}: {e}")
                         return jsonify({'error': f"Failed to process file {md_file}: {str(e)}"}), 500
 
-            return jsonify({'message': f'Video transcribe ingested successfull with collection: {VIDEO_COLLECTION}'})
+            return jsonify({'message': f'Video transcription successfully ingested into : {VIDEO_COLLECTION}'})
 
         except Exception as e:
             logging.error(f"Unexpected error: {e}")

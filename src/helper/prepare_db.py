@@ -1,6 +1,8 @@
 import os
 import logging
 from dotenv import load_dotenv
+import tiktoken
+from langchain_core.documents.base import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -130,9 +132,10 @@ class PrepareVectorDB:
             return None
 
 class PrepareAndSaveScrappedData():
-    def __init__(self,PATH):
+    def __init__(self,PATH, collection_name):
         self.PATH = PATH
         self.scrapped_data = None
+        self.collection_name = collection_name
         self.logger = logging.getLogger(__name__)
 
     def load_scrapped_data(self):
@@ -171,19 +174,19 @@ class PrepareAndSaveScrappedData():
             logging.error(f"Error chunking scrapped data: {e}")
             return None
     
-    def check_and_create_collection(self, collection_name):
+    def check_and_create_collection(self):
         try:
             collections = CUSTOM_QDRANT_CLIENT.get_collections().collections
             existing_collection = False
 
             for collection in collections:
-                if collection_name == collection.name:
+                if self.collection_name == collection.name:
                     existing_collection = True
                     break
 
             if not existing_collection:
                 CUSTOM_QDRANT_CLIENT.recreate_collection(
-                    collection_name,
+                    self.collection_name,
                     vectors_config=VectorParams(
                         size=1536,
                         distance=Distance.COSINE,
@@ -219,7 +222,7 @@ class PrepareAndSaveScrappedData():
                 # full_source_path = os.path.join(WAVEMAKER_WEBSITE, base_filename)
                 source_list.append({"source": URL})
 
-            self.check_and_create_collection(COLLECTION_NAME)
+            self.check_and_create_collection(self.collection_name)
             qdrant_scraper_client.add_texts(content_list, source_list)
             logging.info("Data added to db using the add_texts method")
 
@@ -239,13 +242,12 @@ class PrepareAndSaveVideoTranscribe:
         self.collection_name = collection_name
         self.logger = logging.getLogger(__name__)
 
-    def load_scrapped_data(self):
+    def load_transcribe_data(self):
         try:
             data_loader = CustomDirectoryLoader(self.PATH, 
                                         glob="**/*.md", 
                                         loader_cls=TextLoader)
             self.scrapped_data = data_loader.load()
-            print("Data is done")
             
             if self.scrapped_data is not None:
                 logging.info("Loading .md of Transcribe data is done")
@@ -253,26 +255,48 @@ class PrepareAndSaveVideoTranscribe:
             else:
                 return None
         except Exception as e:
-            logging.error(f"Error loading scrapped data: {e}")
+            logging.error(f"Error loading Transcribe data: {e}")
             return None
     
-    def chunk_scrapped_data(self):
+    def chunk_transcribe_data(self):
         try:
             if self.scrapped_data is None:
-                logging.error("Transcribe data is not loaded. Aborting chunk_scrapped_data.")
+                logging.error("Transcribe data is not loaded. Aborting chunk_transcribe_data.")
                 return None
             
-            logging.info("Loading Transcribe data for chunking")
+            logging.info("Loading transcribe data for chunking")
+            tokenizer = tiktoken.get_encoding("cl100k_base")
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=400, 
-                                                      chunk_overlap=20)
-            data_chunks = splitter.split_documents(self.scrapped_data)
+            def get_token_count(text):
+                tokens = tokenizer.encode(text)
+                return len(tokens)
+            
+            chunks_data = []
 
-            logging.info("Chunking of the scrapped data is done")
-            return data_chunks
+            for doc in self.scrapped_data:
+                content = doc.page_content
+                total_tokens = get_token_count(content)
+                print(f"Total token count for document '{doc.metadata['source']}': {total_tokens}")
+                
+                desired_chunks = 3
+                tokens_per_chunk = total_tokens // desired_chunks
+                print("===>", tokens_per_chunk)
+                
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=tokens_per_chunk, 
+                    chunk_overlap=20,
+                    length_function=len
+                )
+                document_list = [Document(metadata=doc.metadata,
+                                           page_content=content)]
+                
+                data_chunks = splitter.split_documents(document_list)
+                chunks_data.extend(data_chunks)
+            logging.info("Chunking of the Transcribe data is done")
+            return chunks_data
         
         except Exception as e:
-            logging.error(f"Error chunking scrapped data: {e}")
+            logging.error(f"Error chunking transcribe data: {e}")
             return None
     
     def check_and_create_collection(self):
@@ -302,22 +326,22 @@ class PrepareAndSaveVideoTranscribe:
 
     def prepare_and_save_transcribe_data(self,URL):
         try:
-            self.load_scrapped_data()
+            self.load_transcribe_data()
 
             if self.scrapped_data is None:
-                logging.error("Data is not loaded. Aborting prepare_and_save_scrapped_data.")
+                logging.error("Data is not loaded. Aborting PrepareAndSaveVideoTranscribe.")
                 return None
             
-            scrapped_data_chunks = self.chunk_scrapped_data()
+            transcribe_data_chunks = self.chunk_transcribe_data()
             
-            if scrapped_data_chunks is None:
-                logging.error("Chunked documents are not available. Aborting prepare_and_save_scrapped_data.")
+            if transcribe_data_chunks is None:
+                logging.error("Chunked documents are not available. Aborting PrepareAndSaveVideoTranscribe.")
                 return None
 
             content_list = []
             source_list = []
 
-            for document in scrapped_data_chunks:
+            for document in transcribe_data_chunks:
                 content_list.append( document.page_content)
                 base_filename = os.path.basename(document.metadata["source"])
 
@@ -330,14 +354,14 @@ class PrepareAndSaveVideoTranscribe:
             
             self.check_and_create_collection()
             qdrant_video_client.add_texts(content_list, source_list)
-            logging.info("Data added to db using the add_texts method")
+            logging.info("Transcribe Data added to db using the add_texts method")
             
             content_list.clear()
             source_list.clear()
             return True
             
         except Exception as e:
-            logging.error(f"An error occurred in prepare_and_save_scrapped_data: {str(e)}")
+            logging.error(f"An error occurred in PrepareAndSaveVideoTranscribe: {str(e)}")
 
         
 class SemanticSearch:
