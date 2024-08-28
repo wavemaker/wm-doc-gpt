@@ -5,7 +5,7 @@ import logging
 import shutil
 from flask import jsonify
 from Pooch.helper.prepare_db import PrepareAndSaveVideoTranscribe
-
+import re
 
 class PDFProcessor:
     def __init__(self, pdf_path):
@@ -99,6 +99,7 @@ def process_pdf_directory(VIDEO_SOURCES):
                         hyperlinks = pdf_processor.extract_specific_hyperlinks(base_uri)
                         
                         md_content = pdf_processor.save_to_md(text, hyperlinks)
+                        print("====>", md_content)
                         
                         formatted_hyperlinks = format_hyperlinks(hyperlinks)
                         

@@ -38,6 +38,9 @@ qdrant_video_client = Qdrant(CUSTOM_QDRANT_CLIENT,
                                VIDEO_COLLECTION, 
                                embedding)
 
+from nltk.tokenize import word_tokenize  # Ensure you have NLTK installed
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema import Document
 
 class PrepareVectorDB:
     def __init__(self, PATH, collection_name):
@@ -238,7 +241,7 @@ class PrepareAndSaveScrappedData():
 class PrepareAndSaveVideoTranscribe:
     def __init__(self,  PATH, collection_name):
         self.PATH = PATH
-        self.scrapped_data = None
+        self.transcribe_data = None
         self.collection_name = collection_name
         self.logger = logging.getLogger(__name__)
 
@@ -247,63 +250,23 @@ class PrepareAndSaveVideoTranscribe:
             data_loader = CustomDirectoryLoader(self.PATH, 
                                         glob="**/*.md", 
                                         loader_cls=TextLoader)
-            self.scrapped_data = data_loader.load()
+            self.transcribe_data = data_loader.load()
             
-            if self.scrapped_data is not None:
+            if self.transcribe_data is not None:
                 logging.info("Loading .md of Transcribe data is done")
-                return self.scrapped_data
+                print("Loading .md of Transcribe data is done")
+                return self.transcribe_data
             else:
                 return None
         except Exception as e:
             logging.error(f"Error loading Transcribe data: {e}")
             return None
     
-    def chunk_transcribe_data(self):
-        try:
-            if self.scrapped_data is None:
-                logging.error("Transcribe data is not loaded. Aborting chunk_transcribe_data.")
-                return None
-            
-            logging.info("Loading transcribe data for chunking")
-            tokenizer = tiktoken.get_encoding("cl100k_base")
-
-            def get_token_count(text):
-                tokens = tokenizer.encode(text)
-                return len(tokens)
-            
-            chunks_data = []
-
-            for doc in self.scrapped_data:
-                content = doc.page_content
-                total_tokens = get_token_count(content)
-                print(f"Total token count for document '{doc.metadata['source']}': {total_tokens}")
-                
-                desired_chunks = 3
-                tokens_per_chunk = total_tokens // desired_chunks
-                print("===>", tokens_per_chunk)
-                
-                splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=tokens_per_chunk, 
-                    chunk_overlap=20,
-                    length_function=len
-                )
-                document_list = [Document(metadata=doc.metadata,
-                                           page_content=content)]
-                
-                data_chunks = splitter.split_documents(document_list)
-                chunks_data.extend(data_chunks)
-            logging.info("Chunking of the Transcribe data is done")
-            return chunks_data
-        
-        except Exception as e:
-            logging.error(f"Error chunking transcribe data: {e}")
-            return None
-    
     def check_and_create_collection(self):
         try:
             collections = CUSTOM_QDRANT_CLIENT.get_collections().collections
-
             existing_collection = False
+
             for collection in collections:
                 if self.collection_name == collection.name:
                     existing_collection = True
@@ -322,13 +285,55 @@ class PrepareAndSaveVideoTranscribe:
         
         except Exception as e:
             logging.error(f"An error occurred in check_and_create_collection: {str(e)}")
+    
+    def chunk_transcribe_data(self):
+        try:
+            if self.transcribe_data is None:
+                logging.error("Transcribe data is not loaded. Aborting chunk_transcribe_data.")
+                return None
+            
+            logging.info("Loading transcribe data for chunking")
+            tokenizer = tiktoken.get_encoding("cl100k_base")
 
+            def get_token_count(text):
+                tokens = tokenizer.encode(text)
+                return len(tokens)
+            
+            chunks_data = []
 
+            for doc in self.transcribe_data:
+                content = doc.page_content
+                total_tokens = get_token_count(content)
+                print(f"Total token count for document '{doc.metadata['source']}': {total_tokens}")
+                
+                chunk_size = 200
+                
+                tokens = tokenizer.encode(content)
+                chunks = []
+                
+                for i in range(0, len(tokens), chunk_size):
+                    chunk = tokens[i:i+chunk_size]
+                    chunks.append(chunk)
+                
+                if len(chunks) > 0:
+                    chunks[-1].extend(tokens[len(chunks)*chunk_size:])
+                
+                chunk_texts = [tokenizer.decode(chunk) for chunk in chunks]
+                
+                data_chunks = [Document(metadata=doc.metadata, page_content=chunk_text) for chunk_text in chunk_texts]
+                chunks_data.extend(data_chunks)
+            logging.info("Chunking of the Transcribe data is done")
+            return chunks_data
+        
+        except Exception as e:
+            logging.error(f"Error chunking transcribe data: {e}")
+            return None
+        
     def prepare_and_save_transcribe_data(self,URL):
         try:
             self.load_transcribe_data()
 
-            if self.scrapped_data is None:
+            if self.transcribe_data is None:
                 logging.error("Data is not loaded. Aborting PrepareAndSaveVideoTranscribe.")
                 return None
             
@@ -345,13 +350,12 @@ class PrepareAndSaveVideoTranscribe:
                 content_list.append( document.page_content)
                 base_filename = os.path.basename(document.metadata["source"])
 
-                if "https://app.guidde.com" in URL:                    
+                if "https://embed.app.guidde.com" in URL:                    
                         source_list.append({"source": URL})
                 else : 
                     full_source_path = os.path.join(URL, base_filename)
                     
                     source_list.append({"source": URL})
-            
             self.check_and_create_collection()
             qdrant_video_client.add_texts(content_list, source_list)
             logging.info("Transcribe Data added to db using the add_texts method")
@@ -466,3 +470,9 @@ class DeleteDuplicates:
         except Exception as e:
             self.logger.error(f"Error deleting vectors: {e}")
             return False
+        
+collection = "test"
+link = "https://embed.app.guidde.com/playbooks/adrb5VMQ85AcELM4eocAQ3"
+path ="/Users/chiranjeevib_500350/wavemaker/Project/docs-bot/wm-doc-gpttest/texts_"
+read_docs = PrepareAndSaveVideoTranscribe(path, collection)
+read_docs.prepare_and_save_transcribe_data(link)
