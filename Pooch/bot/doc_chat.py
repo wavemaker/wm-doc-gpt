@@ -540,7 +540,7 @@ class WMAssistant:
             else:
                 total_seconds = 0
 
-            new_url = f"{new_base_url}?origin=cq9JWcblzMXt0obBzCh79ljH20p2&t={total_seconds}"
+            new_url = f"{new_base_url}?origin=ccq9JWcblzMXt0obBzCh79ljH20p2&t={total_seconds}"
 
             converted_links.append(new_url)
 
