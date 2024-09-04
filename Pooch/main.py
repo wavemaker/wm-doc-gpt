@@ -22,6 +22,7 @@ from Pooch.helper.semantic_router import query_route
 from Pooch.helper.followup_question_gen import FollowUpQuestionGenerator
 from Pooch.helper.doc_summary import DocSummary
 from Pooch.helper.preprocess_video import process_pdf_directory, ingest_markdown_content
+from Pooch.helper.prepare_db import process_md_files_in_directory
 from Pooch.config.config import (
         #COLLECTION_NAME, 
         # DATA_LOC,
@@ -259,12 +260,17 @@ def handle_ingestion():
         except Exception as e:
             response_data = {"message": f"An error occurred: {str(e)}"}
             return jsonify(response_data)
-    
+
     elif group == "video_data":
         try:
-            results = process_pdf_directory(VIDEO_SOURCES)
-            response, status_code = ingest_markdown_content(results, VIDEO_COLLECTION)
-            return response, status_code
+            data_ingest = process_md_files_in_directory(VIDEO_SOURCES, VIDEO_COLLECTION)
+            
+            if data_ingest:  # If ingestion was successful
+                response_data = {"message": f"Video data ingested SUCCESSFULLY: {VIDEO_COLLECTION}"}
+                return jsonify(response_data)
+            else:
+                response_data = {"message": f"Video data ingestion FAILED: {VIDEO_COLLECTION}"}
+                return jsonify(response_data)
 
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500

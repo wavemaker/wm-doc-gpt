@@ -13,6 +13,7 @@ from Pooch.helper.prepare_db import PrepareVectorDB
 from langchain_together import ChatTogether
 from Pooch.helper.followup_question_gen import FollowUpQuestionGenerator
 import json
+import re
 import os
 from flask import jsonify
 import logging
@@ -163,7 +164,7 @@ class WMAssistant:
         Notes:
             - Uses different search arguments for video collections.
         """
-        search_kwargs = {"score_threshold": 0.83, "k": 2} if collection_name == VIDEO_COLLECTION else {}
+        search_kwargs = {"score_threshold": 0.80, "k": 2} if collection_name == VIDEO_COLLECTION else {}
         
         logging.info(f"Creating retriever for collection: {collection_name}")
         logging.info(f"Search kwargs: {search_kwargs}")
@@ -521,7 +522,78 @@ class WMAssistant:
         else:
             return file_path.replace('.md', '')
 
+    @staticmethod
+    def convert_links_and_add_timestamp(documents):
+        converted_links = []
+
+        for doc in documents:
+            source_url = doc.metadata['source']
+            new_base_url = source_url.replace("https://embed.app.guidde.com", "https://app.guidde.com/share")
+
+            page_content = doc.page_content
+            timestamp_match = re.search(r'\d{2}:\d{2}', page_content)
+            
+            if timestamp_match:
+                timestamp_str = timestamp_match.group()
+                minutes, seconds = map(int, timestamp_str.split(':'))
+                total_seconds = minutes * 60 + seconds
+            else:
+                total_seconds = 0
+
+            new_url = f"{new_base_url}?origin=cq9JWcblzMXt0obBzCh79ljH20p2&t={total_seconds}"
+
+            converted_links.append(new_url)
+
+        return converted_links
+
+    # @staticmethod
+    # def process_question(session_id, question, url, question_from):
+    #     """
+    #     Processes a question based on the specified source and retrieves relevant information.
+
+    #     Args:
+    #         session_id (str): The unique identifier for the current user session.
+    #         question (str): The question to be processed.
+    #         url (str): The URL related to the question, if applicable.
+    #         question_from (str): The source of the question, either "website" or "docs".
+
+    #     Returns:
+    #         tuple: A tuple containing:
+    #             - with_message_history: An instance of RunnableWithMessageHistory, used to keep track of the conversation history.
+    #             - retriever: The retriever instance used to fetch relevant documents based on the question.
+    #             - sources (list): A list of URLs or source identifiers related to the retrieved documents.
+    #             - video_sources (list): A list of URLs or source identifiers related to the retrieved videos.
+
+    #     Raises:
+    #         ValueError: If the `question_from` parameter is not "website" or "docs".
+    #     """
+    #     if question_from == "website":
+    #         with_message_history = WMAssistant.website_pooch(session_id, 
+    #                                                          question, 
+    #                                                          url, 
+    #                                                          question_from)
+    #         retriever = WMAssistant().website_retriever
         
+    #     elif question_from == "docs":
+    #         with_message_history = WMAssistant.docs_pooch(session_id, 
+    #                                                       question, 
+    #                                                       url, 
+    #                                                       question_from)
+    #         retriever = WMAssistant().docs_retriever
+
+    #     else:
+    #         raise ValueError(f"Invalid value for `question_from`: {question_from}")
+
+    #     # Retrieve documents related to the question using the chosen retriever
+    #     docs = retriever.invoke(question)
+    #     sources = [WMAssistant.add_website_url(doc.metadata['source']) for doc in docs]
+
+    #     # Retrieve videos related to the question using the transcribe retriever
+    #     videos_ = WMAssistant().transcribe_retriever.invoke(question)
+    #     video_sources = list(set([doc.metadata['source'] for doc in videos_]))
+
+    #     return with_message_history, retriever, sources, video_sources
+
     @staticmethod
     def process_question(session_id, question, url, question_from):
         """
@@ -566,7 +638,7 @@ class WMAssistant:
 
         # Retrieve videos related to the question using the transcribe retriever
         videos_ = WMAssistant().transcribe_retriever.invoke(question)
-        video_sources = list(set([doc.metadata['source'] for doc in videos_]))
+        video_sources = list(set(WMAssistant.convert_links_and_add_timestamp(videos_)))
 
         return with_message_history, retriever, sources, video_sources
 
