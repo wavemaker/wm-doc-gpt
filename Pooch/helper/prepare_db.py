@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 from dotenv import load_dotenv
 import tiktoken
@@ -11,7 +12,9 @@ from langchain.embeddings import OpenAIEmbeddings
 from qdrant_client import models, QdrantClient
 from qdrant_client.http.models import VectorParams, Distance 
 from Pooch.helper.loader import CustomFileLoader, CustomDirectoryLoader
-from Pooch.helper.model import SentenceTransformerLoader 
+from Pooch.helper.model import SentenceTransformerLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema import Document 
 from Pooch.config.config import(
                     HOSTNAME,
                     PORT,
@@ -37,10 +40,6 @@ qdrant_scraper_client = Qdrant(CUSTOM_QDRANT_CLIENT,
 qdrant_video_client = Qdrant(CUSTOM_QDRANT_CLIENT, 
                                VIDEO_COLLECTION, 
                                embedding)
-
-from nltk.tokenize import word_tokenize  # Ensure you have NLTK installed
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
 
 class PrepareVectorDB:
     def __init__(self, PATH, collection_name):
@@ -293,42 +292,35 @@ class PrepareAndSaveVideoTranscribe:
                 return None
             
             logging.info("Loading transcribe data for chunking")
-            tokenizer = tiktoken.get_encoding("cl100k_base")
-
-            def get_token_count(text):
-                tokens = tokenizer.encode(text)
-                return len(tokens)
-            
+            source = self.PATH
             chunks_data = []
 
             for doc in self.transcribe_data:
-                content = doc.page_content
-                total_tokens = get_token_count(content)
-                print(f"Total token count for document '{doc.metadata['source']}': {total_tokens}")
-                
-                chunk_size = 200
-                
-                tokens = tokenizer.encode(content)
-                chunks = []
-                
-                for i in range(0, len(tokens), chunk_size):
-                    chunk = tokens[i:i+chunk_size]
-                    chunks.append(chunk)
-                
-                if len(chunks) > 0:
-                    chunks[-1].extend(tokens[len(chunks)*chunk_size:])
-                
-                chunk_texts = [tokenizer.decode(chunk) for chunk in chunks]
-                
-                data_chunks = [Document(metadata=doc.metadata, page_content=chunk_text) for chunk_text in chunk_texts]
-                chunks_data.extend(data_chunks)
+                content = doc.page_content.splitlines()  # Split content into lines
+                current_chunk = []
+
+                for line in content:
+                    # Check if the line is not empty and does not contain the specified URL
+                    if line.strip() and "https://embed.app.guidde.com/playbooks/" not in line:
+                        current_chunk.append(line.strip())  # Add the line to the current chunk
+
+                    if len(current_chunk) == 2:
+                        chunk_content = "\n\n".join(current_chunk)  # Join the lines into a single string
+                        chunks_data.append(Document(metadata={'source': source}, page_content=chunk_content))
+                        current_chunk = []  # Reset for the next chunk
+
+                # Add any remaining lines as a final chunk
+                if current_chunk:
+                    chunk_content = "\n\n".join(current_chunk)
+                    chunks_data.append(Document(metadata={'source': source}, page_content=chunk_content))
+
             logging.info("Chunking of the Transcribe data is done")
             return chunks_data
         
         except Exception as e:
             logging.error(f"Error chunking transcribe data: {e}")
             return None
-        
+    
     def prepare_and_save_transcribe_data(self,URL):
         try:
             self.load_transcribe_data()
@@ -338,7 +330,7 @@ class PrepareAndSaveVideoTranscribe:
                 return None
             
             transcribe_data_chunks = self.chunk_transcribe_data()
-            
+            # print("transcribe_data_chunks:", transcribe_data_chunks)
             if transcribe_data_chunks is None:
                 logging.error("Chunked documents are not available. Aborting PrepareAndSaveVideoTranscribe.")
                 return None
@@ -471,8 +463,31 @@ class DeleteDuplicates:
             self.logger.error(f"Error deleting vectors: {e}")
             return False
         
-collection = "test"
-link = "https://embed.app.guidde.com/playbooks/adrb5VMQ85AcELM4eocAQ3"
-path ="/Users/chiranjeevib_500350/wavemaker/Project/docs-bot/wm-doc-gpttest/texts_"
-read_docs = PrepareAndSaveVideoTranscribe(path, collection)
-read_docs.prepare_and_save_transcribe_data(link)
+
+def extract_hyperlinks_from_md(file_path):
+    hyperlinks = []
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+        hyperlinks = re.findall(r'Source:\s*(https?://\S+)', content)
+    return hyperlinks
+
+
+def process_md_files_in_directory(md_directory, video_collection):
+    ingestion_success = False  
+    
+    for root, _, files in os.walk(md_directory):
+        for file in files:
+            if file.endswith(".md"):
+                file_path = os.path.join(root, file)
+                
+                hyperlinks = extract_hyperlinks_from_md(file_path)
+                
+                read_docs = PrepareAndSaveVideoTranscribe(file_path, video_collection)
+                
+                if hyperlinks:
+                    read_docs.prepare_and_save_transcribe_data(hyperlinks[0])
+                    ingestion_success = True 
+                else:
+                    print(f"No hyperlinks found in {file_path}")
+    
+    return ingestion_success
