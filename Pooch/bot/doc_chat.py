@@ -164,7 +164,7 @@ class WMAssistant:
         Notes:
             - Uses different search arguments for video collections.
         """
-        search_kwargs = {"score_threshold": 0.80, "k": 2} if collection_name == VIDEO_COLLECTION else {}
+        search_kwargs = {"score_threshold": 0.85, "k": 2} if collection_name == VIDEO_COLLECTION else {}
         
         logging.info(f"Creating retriever for collection: {collection_name}")
         logging.info(f"Search kwargs: {search_kwargs}")
