@@ -103,7 +103,10 @@ CONTEXTUAL_SYSTEM_MSG = """Given a chat history and the latest user question, wh
                            without the chat history. Do NOT answer the question, just reformulate it if needed; 
                            otherwise, return it as is."""
 
-QUESTION_GEN_SYSTEM_MSG = "You excel at generating recommended questions related to the {keyword} and also at providing the {chunks}. So try to generate the top 3 recommended question based on the provided keyword and chunks.Just provide the questions not unnecessary content."
+QUESTION_GEN_SYSTEM_MSG = """You are skilled at generating recommended questions related to the {keyword}. 
+                                Additionally, the {chunks} will be provided. PLEASE GENERATE ONLY TOP 3 recommended questions based on the given keyword and chunks. 
+                                Do NOT repeat the original question. Make sure only return the questions in the list with double inverted commas are returned, separated by commas within square brackets without adding any sentences in the beginning. 
+                                Here are the TOP 3 RECOMMENDED questions based on the keyword :"""
 
 
 #==== Scrapping ====#

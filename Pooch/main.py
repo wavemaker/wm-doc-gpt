@@ -555,21 +555,22 @@ def queGen():
     gen = WMAssistant.questiongen(question)
     return jsonify(gen)
 
-@app.route('/summary', methods=['POST'])
+@app.route('/summary', methods=['GET'])
 def summary_gen():
         # logging.info(f"session------> {session}")
         # user_id = request.headers.get('Uuid')
         # history = RedisChatMessageHistory(user_id, 
         #                 url=REDIS_URL)
 
-        data = request.json
-        url = data.get('url')
-        base_github_raw_url = "https://raw.githubusercontent.com/wavemaker/docs/master/learn"
-        fetcher = GitHubContentFetcher(base_github_raw_url)
-        content = fetcher.fetch_content_from_github(url)
-        generator = DocSummary()
-        summary = generator.generate_summary(content)
+        service_mode = request.args.get('service_mode')
+        if service_mode == "Docs":
+            summary_url = request.args.get('summary_url')
+            base_github_raw_url = "https://raw.githubusercontent.com/wavemaker/docs/master/learn"
+            fetcher = GitHubContentFetcher(base_github_raw_url)
+            content = fetcher.fetch_content_from_github(summary_url)
+            generator = DocSummary()
+            summary = generator.generate_summary(content)
 
-        # history.add_user_message(url)
-        # history.add_ai_message(summary)
-        return summary
+            # history.add_user_message(url)
+            # history.add_ai_message(summary)
+            return summary

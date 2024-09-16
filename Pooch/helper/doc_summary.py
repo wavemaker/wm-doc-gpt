@@ -13,16 +13,18 @@ class DocSummary:
             max_tokens=max_tokens
         )
 
-        self.template = """Generate a detailed and comprehensive summary from the provided context {data}. 
-                        Provide an in-depth summary of the core features of the content, explaining each feature and its significance.
-                        Describe the practical benefits and implications of the content, including how it improves user experience or functionality.
-                        Highlight notable details or additional information that is essential for understanding the content.
-                        Ensure that the summary dynamically adjusts to include relevant sections based on the content, providing a well-rounded overview of the material.
-                        The response should be a valid JSON object with the following structure:
-                        - **"summary"**: A single string combining the detailed summary of the Overview and Topics sections into one cohesive text. Avoid nested keys and values—just provide the plain summary text.
-                        - **"questions"**: A list of follow-up questions derived from the content, formatted as strings and make sure list should have only 3 questions.
-                        Ensure the response is structured as a valid JSON array.and **ONLY** return the JSON array.
-                        Here is the summary and questions:
+        self.template = """
+                            Generate a detailed and comprehensive summary from the provided context {data}. 
+                            Provide an in-depth summary of the core features of the content, explaining each feature and its significance.
+                            Describe the practical benefits and implications of the content, including how it improves user experience or functionality.
+                            Highlight notable details or additional information that is essential for understanding the content.
+                            Ensure that the summary dynamically adjusts to include relevant sections based on the content, providing a well-rounded overview of the material.
+                            The response must be a valid JSON array with the following structure:
+                            - **"summary"**: A single string combining the detailed summary of the content. Avoid nested keys and values—just provide the plain summary text.
+                            - **"questions"**: A list of follow-up questions derived from the content, formatted as strings. Include exactly 3 questions.
+                            
+                            Your response should contain **ONLY** the JSON array and nothing else. Do not include any additional text or formatting outside the JSON.
+                            LLM Response: Here is the summary and questions:
                             """
 
         self.prompt = PromptTemplate(
@@ -35,20 +37,64 @@ class DocSummary:
         )
     
     def generate_summary(self, data):
-        response = self.llm_chain.run(data=data)
-        print(response)
-        response = re.sub(r'[\x00-\x1F\x7F]', '', response)
-        parsed_json = json.loads(response)
-        data = parsed_json[0]
-        summary = data.get("summary", "")
-        questions = data.get("questions", [])
+        try:
+            response = self.llm_chain.run(data=data)            
+            if not response:
+                return jsonify({
+                    "answer": "Error: Received an empty response from the LLM.",
+                    "faq_id": "",
+                    "follow_up_questions": [],
+                    "intent": "",
+                    "response_from": "Summary",
+                    "sources": ""
+                })
+            
+            response = re.sub(r'[\x00-\x1F\x7F]', '', response)
+            
+            try:
+                parsed_json = json.loads(response)
+            except json.JSONDecodeError:
+                return jsonify({
+                    "answer": "Error: Could not decode the response into valid JSON.",
+                    "faq_id": "",
+                    "follow_up_questions": [],
+                    "intent": "",
+                    "response_from": "Summary",
+                    "sources": ""
+                })
+            
+            if isinstance(parsed_json, list) and len(parsed_json) > 0:
+                data = parsed_json[0]
+                
+                summary = data.get("summary", "")
+                questions = data.get("questions", [])
+                
+                formatted_response = {
+                    "answer": summary,
+                    "faq_id": "",  
+                    "follow_up_questions": questions,  
+                    "intent": "",  
+                    "response_from": "Summary",
+                    "sources": ""  
+                }
+                
+                return jsonify(formatted_response)
+            else:
+                return jsonify({
+                    "answer": "",
+                    "faq_id": "",
+                    "follow_up_questions": [],
+                    "intent": "",
+                    "response_from": "Summary",
+                    "sources": ""
+                })
 
-        formatted_response = {
-            "answer": summary,
-            "faq_id": "",  
-            "follow_up_questions": questions,  
-            "intent": "",  
-            "response_from": "Summary",
-            "sources": ""  
-        }
-        return jsonify(formatted_response)
+        except Exception as e:
+            return jsonify({
+                "answer": f"Error: {str(e)}",
+                "faq_id": "",
+                "follow_up_questions": [],
+                "intent": "",
+                "response_from": "Summary",
+                "sources": ""
+            })
