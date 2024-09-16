@@ -546,54 +546,6 @@ class WMAssistant:
 
         return converted_links
 
-    # @staticmethod
-    # def process_question(session_id, question, url, question_from):
-    #     """
-    #     Processes a question based on the specified source and retrieves relevant information.
-
-    #     Args:
-    #         session_id (str): The unique identifier for the current user session.
-    #         question (str): The question to be processed.
-    #         url (str): The URL related to the question, if applicable.
-    #         question_from (str): The source of the question, either "website" or "docs".
-
-    #     Returns:
-    #         tuple: A tuple containing:
-    #             - with_message_history: An instance of RunnableWithMessageHistory, used to keep track of the conversation history.
-    #             - retriever: The retriever instance used to fetch relevant documents based on the question.
-    #             - sources (list): A list of URLs or source identifiers related to the retrieved documents.
-    #             - video_sources (list): A list of URLs or source identifiers related to the retrieved videos.
-
-    #     Raises:
-    #         ValueError: If the `question_from` parameter is not "website" or "docs".
-    #     """
-    #     if question_from == "website":
-    #         with_message_history = WMAssistant.website_pooch(session_id, 
-    #                                                          question, 
-    #                                                          url, 
-    #                                                          question_from)
-    #         retriever = WMAssistant().website_retriever
-        
-    #     elif question_from == "docs":
-    #         with_message_history = WMAssistant.docs_pooch(session_id, 
-    #                                                       question, 
-    #                                                       url, 
-    #                                                       question_from)
-    #         retriever = WMAssistant().docs_retriever
-
-    #     else:
-    #         raise ValueError(f"Invalid value for `question_from`: {question_from}")
-
-    #     # Retrieve documents related to the question using the chosen retriever
-    #     docs = retriever.invoke(question)
-    #     sources = [WMAssistant.add_website_url(doc.metadata['source']) for doc in docs]
-
-    #     # Retrieve videos related to the question using the transcribe retriever
-    #     videos_ = WMAssistant().transcribe_retriever.invoke(question)
-    #     video_sources = list(set([doc.metadata['source'] for doc in videos_]))
-
-    #     return with_message_history, retriever, sources, video_sources
-
     @staticmethod
     def process_question(session_id, question, url, question_from):
         """
@@ -729,13 +681,6 @@ class WMAssistant:
         llm = WMAssistant._get_llm()
 
         docs_retriever = WMAssistant().docs_retriever
-        # docs_keyword_retriever = WMAssistant().docs_keyword_retriever
-
-        # ensemble_retriever = WMAssistant._create_ensemble_retriever(
-        #     retrievers=[docs_retriever, docs_keyword_retriever],
-        #     weights=[0.6, 0.4]
-        # )
-        # chunks = ensemble_retriever.invoke(keyword)
         chunks = docs_retriever.invoke(keyword)
         response = WMAssistant._generate_questions(llm, keyword, chunks)
         return response                                             

@@ -23,6 +23,7 @@ from Pooch.helper.followup_question_gen import FollowUpQuestionGenerator
 from Pooch.helper.doc_summary import DocSummary
 from Pooch.helper.preprocess_video import process_pdf_directory, ingest_markdown_content
 from Pooch.helper.prepare_db import process_md_files_in_directory
+from Pooch.helper.scrapper import GitHubContentFetcher
 from Pooch.config.config import (
         #COLLECTION_NAME, 
         # DATA_LOC,
@@ -556,20 +557,19 @@ def queGen():
 
 @app.route('/summary', methods=['POST'])
 def summary_gen():
-        
-        logging.info(f"session------> {session}")
-        user_id = request.headers.get('Uuid')
-
-        history = RedisChatMessageHistory(user_id, 
-                        url=REDIS_URL)
+        # logging.info(f"session------> {session}")
+        # user_id = request.headers.get('Uuid')
+        # history = RedisChatMessageHistory(user_id, 
+        #                 url=REDIS_URL)
 
         data = request.json
         url = data.get('url')
-
-        parsed_html, error = Scraper.scrape_website(url)
+        base_github_raw_url = "https://raw.githubusercontent.com/wavemaker/docs/master/learn"
+        fetcher = GitHubContentFetcher(base_github_raw_url)
+        content = fetcher.fetch_content_from_github(url)
         generator = DocSummary()
-        summary = generator.generate_summary(parsed_html.cleaned_text)
-        
-        history.add_user_message(url)
-        history.add_ai_message(summary)
-        return jsonify(summary)
+        summary = generator.generate_summary(content)
+
+        # history.add_user_message(url)
+        # history.add_ai_message(summary)
+        return summary
