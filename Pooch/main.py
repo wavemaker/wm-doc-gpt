@@ -24,6 +24,7 @@ from Pooch.helper.doc_summary import DocSummary
 from Pooch.helper.preprocess_video import process_pdf_directory, ingest_markdown_content
 from Pooch.helper.prepare_db import process_md_files_in_directory
 from Pooch.helper.scrapper import GitHubContentFetcher
+from Pooch.bot.doc_chat import WMAssistant
 from Pooch.config.config import (
         #COLLECTION_NAME, 
         # DATA_LOC,
@@ -547,15 +548,14 @@ def health():
     health_response = {"message": "Health check successful"}
     return jsonify(health_response)
 
-from Pooch.bot.doc_chat import WMAssistant
-@app.route('/questionGen', methods=['GET'])
+@app.route('/questionGen', methods=['POST'])
 def queGen():
     data = request.json
     question = data.get('question')
     gen = WMAssistant.questiongen(question)
     return jsonify(gen)
 
-@app.route('/summary', methods=['GET'])
+@app.route('/summary', methods=['POST'])
 def summary_gen():
         # logging.info(f"session------> {session}")
         # user_id = request.headers.get('Uuid')
